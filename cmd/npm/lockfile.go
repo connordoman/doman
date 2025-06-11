@@ -48,5 +48,5 @@ func executeLockfile(cmd *cobra.Command, args []string) {
 		pkg.FailAndExit("failed to generate npm lockfile: %w", err)
 	}
 
-	pkg.PrintSuccess("Generated lockfile")
+	pkg.PrintSuccess("generated lockfile")
 }
