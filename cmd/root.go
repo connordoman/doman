@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/connordoman/doman/cmd/git"
+	"github.com/connordoman/doman/cmd/npm"
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +16,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(git.AuthorCommand)
+	rootCmd.AddCommand(npm.LockfileCommand)
 }
 
 func Execute() error {
