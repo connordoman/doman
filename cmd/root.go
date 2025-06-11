@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/connordoman/doman/cmd/git"
 	"github.com/connordoman/doman/cmd/npm"
+	"github.com/connordoman/doman/cmd/sys"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,7 @@ func init() {
 	rootCmd.AddCommand(git.AuthorCommand)
 	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)
+	rootCmd.AddCommand(sys.IPCommand)
 }
 
 func Execute() error {
