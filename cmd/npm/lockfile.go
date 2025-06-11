@@ -10,7 +10,7 @@ import (
 var LockfileCommand = &cobra.Command{
 	Use:   "npm.lockfile",
 	Short: "Generate a lockfile for the current npm project without installing node_modules",
-	Run:   execute,
+	Run:   executeLockfile,
 }
 
 func init() {
@@ -18,7 +18,7 @@ func init() {
 	LockfileCommand.Flags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 }
 
-func execute(cmd *cobra.Command, args []string) {
+func executeLockfile(cmd *cobra.Command, args []string) {
 	echoOn, _ := cmd.Flags().GetBool("echo")
 	if echoOn {
 		pkg.SetEchoOn()

@@ -16,6 +16,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(git.AuthorCommand)
+	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)
 }
 

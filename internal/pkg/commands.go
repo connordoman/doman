@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 type CommandConfig struct {
@@ -57,4 +58,17 @@ func SetEchoOff() {
 
 func SetEchoOn() {
 	config.EchoOff = false
+}
+
+func SetEcho(cmd *cobra.Command) {
+	echoOn, err := cmd.Flags().GetBool("echo")
+	if err != nil {
+		return
+	}
+
+	if echoOn {
+		SetEchoOn()
+	} else {
+		SetEchoOff()
+	}
 }

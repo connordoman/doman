@@ -12,7 +12,7 @@ import (
 var AuthorCommand = &cobra.Command{
 	Use:   "git.author",
 	Short: "Print the current git.user & git.email",
-	Run:   execute,
+	Run:   executeAuthor,
 }
 
 func init() {
@@ -22,7 +22,7 @@ func init() {
 
 // bash:   echo "$(git config --get user.name) <$(git config --get user.email)>"
 
-func execute(cmd *cobra.Command, args []string) {
+func executeAuthor(cmd *cobra.Command, args []string) {
 	echoOn, _ := cmd.Flags().GetBool("echo")
 	if echoOn {
 		pkg.SetEchoOn()
