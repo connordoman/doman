@@ -23,12 +23,6 @@ func init() {
 // bash:   echo "$(git config --get user.name) <$(git config --get user.email)>"
 
 func executeAuthor(cmd *cobra.Command, args []string) {
-	echoOn, _ := cmd.Flags().GetBool("echo")
-	if echoOn {
-		pkg.SetEchoOn()
-	} else {
-		pkg.SetEchoOff()
-	}
 
 	global, _ := cmd.Flags().GetBool("global")
 

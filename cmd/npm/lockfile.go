@@ -15,17 +15,9 @@ var LockfileCommand = &cobra.Command{
 
 func init() {
 	LockfileCommand.Flags().StringP("dir", "d", "", "Directory to run the command in (defaults to current directory)")
-	LockfileCommand.Flags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 }
 
 func executeLockfile(cmd *cobra.Command, args []string) {
-	echoOn, _ := cmd.Flags().GetBool("echo")
-	if echoOn {
-		pkg.SetEchoOn()
-	} else {
-		pkg.SetEchoOff()
-	}
-
 	dir, _ := cmd.Flags().GetString("dir")
 	if dir != "" {
 		if err := pkg.Chdir(dir); err != nil {

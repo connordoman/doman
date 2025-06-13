@@ -15,12 +15,9 @@ var RemotesCommand = &cobra.Command{
 }
 
 func init() {
-	RemotesCommand.Flags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 }
 
 func executeRemotes(cmd *cobra.Command, args []string) {
-	pkg.SetEcho(cmd)
-
 	remotesRaw, err := pkg.RunCommand("git", "remote", "-v")
 	if err != nil {
 		pkg.FailAndExit("failed to get git remotes: %v", err)
