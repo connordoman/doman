@@ -41,5 +41,5 @@ func executeAuthor(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error getting user.email: %v", err)
 	}
 
-	fmt.Printf("%s <%s>\n", strings.TrimSpace(userName), strings.TrimSpace(email))
+	fmt.Printf("%s %s\n", pkg.SprintfBold(strings.TrimSpace(userName)), pkg.SprintfGrey(strings.TrimSpace(email)))
 }

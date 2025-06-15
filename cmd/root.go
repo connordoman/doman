@@ -24,6 +24,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 
 	// Commands
+	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(git.AuthorCommand)
 	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)
