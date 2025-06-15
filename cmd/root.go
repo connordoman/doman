@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/connordoman/doman/cmd/completions"
 	"github.com/connordoman/doman/cmd/git"
 	"github.com/connordoman/doman/cmd/npm"
 	"github.com/connordoman/doman/cmd/sys"
@@ -20,11 +21,14 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	// Set up
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
 	// Flags
 	rootCmd.PersistentFlags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 
 	// Commands
-	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(completions.CompletionsCommand)
 	rootCmd.AddCommand(git.AuthorCommand)
 	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)

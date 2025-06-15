@@ -31,6 +31,10 @@ func PrintError(format string, args ...any) {
 	fmt.Println(errorStyle.Render(str))
 }
 
+func PrintInfo(format string, args ...any) {
+	fmt.Println(greyStyle.Render(fmt.Sprintf(format, args...)))
+}
+
 func FailAndExit(format string, args ...any) {
 	PrintError(format, args...)
 	os.Exit(1)

@@ -1,9 +1,9 @@
-package cmd
+package completions
 
 import "github.com/spf13/cobra"
 
-var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
+var generateCommand = &cobra.Command{
+	Use:   "generate [bash|zsh|fish|powershell]",
 	Short: "Generate completion script",
 	Long: `To load completions:
 	
