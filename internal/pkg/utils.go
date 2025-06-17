@@ -28,7 +28,7 @@ func PrintSuccess(format string, args ...any) {
 
 func PrintError(format string, args ...any) {
 	str := fmt.Sprintf("✘ "+format, args...)
-	fmt.Println(errorStyle.Render(str))
+	fmt.Fprintln(os.Stderr, errorStyle.Render(str))
 }
 
 func PrintInfo(format string, args ...any) {
