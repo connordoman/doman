@@ -13,7 +13,7 @@ func PromptAi(model, apiKey, prompt string) error {
 	chatCompletion, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
 		Model: model,
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage("You are an assistant reached through a CLI tool. Please be helpful & concise in your responses. Only respond in plain text, do not use markdown or any other format."),
+			openai.SystemMessage("You are an assistant reached through a CLI tool. Please be helpful & concise in your responses. Please respond using ANSI coloring & format escape codes that appropriately supports your response. Please do not use markdown formatting."),
 			openai.UserMessage(prompt),
 		},
 		MaxCompletionTokens: openai.Int(1000),
@@ -24,7 +24,7 @@ func PromptAi(model, apiKey, prompt string) error {
 
 	// Process the chat completion response
 	for _, choice := range chatCompletion.Choices {
-		fmt.Printf("🤖 %s\n", SprintfGrey(choice.Message.Content))
+		fmt.Printf("🤖 %s\n", choice.Message.Content)
 	}
 
 	return nil

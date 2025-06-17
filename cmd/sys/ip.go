@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 
@@ -91,5 +92,5 @@ func getLocalIP() (string, error) {
 }
 
 func formatIP(context, ip string) string {
-	return fmt.Sprintf("%s\t%s", pkg.SprintfGrey(context), pkg.SprintfBold(ip))
+	return fmt.Sprintf("%s\t%s", txt.Greyf(context), txt.Boldf(ip))
 }

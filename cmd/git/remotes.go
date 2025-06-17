@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 
@@ -76,5 +77,5 @@ func formatRemote(remote string) (string, error) {
 		fetchIcon = "↓"
 	}
 
-	return fmt.Sprintf("%s %s %s", pkg.SprintfBold(name), pkg.SprintfGrey(url), fetchIcon), nil
+	return fmt.Sprintf("%s %s %s", txt.Boldf(name), txt.Greyf(url), fetchIcon), nil
 }

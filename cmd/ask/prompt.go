@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -115,7 +116,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 }
 
 func runSetup() error {
-	fmt.Printf("Configuring %s:\n", pkg.SprintfBold("doman ask"))
+	fmt.Printf("Configuring %s:\n", txt.Boldf("doman ask"))
 
 	if err := setupForm.Run(); err != nil {
 		return fmt.Errorf("failed to run setup form: %w", err)
@@ -143,7 +144,7 @@ func runSetup() error {
 	}
 
 	pkg.PrintSuccess("Configuration saved successfully!")
-	fmt.Printf("%s %s %s\n", pkg.SprintfGrey("You can now run"), pkg.SprintfBold(pkg.SprintfBold("doman ask")), pkg.SprintfGrey("to use your configuration."))
+	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf(txt.Boldf("doman ask")), txt.Greyf("to use your configuration."))
 
 	return nil
 }
