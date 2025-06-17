@@ -3,9 +3,16 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/charmbracelet/glamour"
+	"github.com/connordoman/doman/internal/txt"
 	openai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+)
+
+var (
+	style, _ = glamour.NewTermRenderer(glamour.WithAutoStyle())
 )
 
 func PromptAi(model, apiKey, prompt string) error {
@@ -23,9 +30,25 @@ func PromptAi(model, apiKey, prompt string) error {
 	}
 
 	// Process the chat completion response
+	var result string
+
 	for _, choice := range chatCompletion.Choices {
-		fmt.Printf("🤖 %s\n", choice.Message.Content)
+		content := choice.Message.Content
+		content = strings.ReplaceAll(content, "\n\n\n\n", "\n\n")
+		content = strings.TrimSpace(content)
+
+		formatted, err := style.Render(content)
+		if err != nil {
+			PrintError("Failed to render response: %v", err)
+			continue
+		}
+
+		result += formatted
 	}
+
+	fmt.Println(result)
+
+	fmt.Printf("\n%s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("Check important info for mistakes."))
 
 	return nil
 }
