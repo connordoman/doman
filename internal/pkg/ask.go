@@ -48,7 +48,7 @@ func PromptAi(model, apiKey, prompt string) error {
 
 	fmt.Println(result)
 
-	fmt.Printf("\n%s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("Check important info for mistakes."))
+	fmt.Printf("\n%s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 Check important info for mistakes."))
 
 	return nil
 }

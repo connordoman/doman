@@ -6,22 +6,24 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var successStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#22c55e"))
+var (
+	successStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#22c55e"))
 
-var errorStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#ef4444"))
+	errorStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#ef4444"))
 
-var boldStyle = lipgloss.NewStyle().
-	Bold(true)
+	boldStyle = lipgloss.NewStyle().
+			Bold(true)
 
-var greyStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#6b7280"))
+	greyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6b7280"))
 
-var blueStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#3b82f6"))
+	blueStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#3b82f6"))
+)
 
 func Boldf(format string, args ...any) string {
 	return boldStyle.Render(fmt.Sprintf(format, args...))

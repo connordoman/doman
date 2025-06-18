@@ -3,7 +3,9 @@ package cmd
 import (
 	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
+	"github.com/connordoman/doman/cmd/example"
 	"github.com/connordoman/doman/cmd/git"
+	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
 	"github.com/connordoman/doman/cmd/sys"
 	"github.com/connordoman/doman/internal/config"
@@ -41,6 +43,10 @@ func init() {
 	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)
 	rootCmd.AddCommand(sys.IPCommand)
+
+	// Subject to removal
+	rootCmd.AddCommand(go_self.RunCommand)
+	rootCmd.AddCommand(example.ExampleCommand)
 }
 
 func Execute() error {

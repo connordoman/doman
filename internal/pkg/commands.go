@@ -1,8 +1,10 @@
 package pkg
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -14,7 +16,7 @@ type CommandConfig struct {
 	EchoOff bool
 }
 
-var config CommandConfig = CommandConfig{
+var cmdConfig CommandConfig = CommandConfig{
 	EchoOff: false,
 }
 
@@ -33,31 +35,49 @@ var (
 	Gray      = color.New(color.FgHiBlack).SprintfFunc()
 )
 
-func runCommandHelper(printCommand bool, command string, args ...string) (string, error) {
+func runCommandHelper(withOutput, printCommand bool, command string, args ...string) (string, error) {
 	if printCommand {
 		cmdString := fmt.Sprintf("$ %s %s", command, strings.Join(args, " "))
 		log.Println(Bold(Gray(cmdString)))
 	}
 
 	cmd := exec.Command(command, args...)
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
+
+	var outBuffer bytes.Buffer
+
+	if withOutput {
+		// For commands that should output directly to terminal to preserve colors
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	} else {
+		// For commands where we need to capture output
+		cmd.Stdout = &outBuffer
+		cmd.Stderr = &outBuffer
 	}
 
-	return string(output), nil
+	if err := cmd.Run(); err != nil {
+		return outBuffer.String(), fmt.Errorf("error running command '%s %s': %w", command, strings.Join(args, " "), err)
+	}
+
+	out := outBuffer.String()
+
+	return out, nil
 }
 
 func RunCommand(command string, args ...string) (string, error) {
-	return runCommandHelper(!config.EchoOff, command, args...)
+	return runCommandHelper(false, !cmdConfig.EchoOff, command, args...)
+}
+
+func RunCommandWithOutput(command string, args ...string) (string, error) {
+	return runCommandHelper(true, !cmdConfig.EchoOff, command, args...)
 }
 
 func SetEchoOff() {
-	config.EchoOff = true
+	cmdConfig.EchoOff = true
 }
 
 func SetEchoOn() {
-	config.EchoOff = false
+	cmdConfig.EchoOff = false
 }
 
 func SetEcho(cmd *cobra.Command) {
