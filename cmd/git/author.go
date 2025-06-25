@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 
@@ -41,5 +42,5 @@ func executeAuthor(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error getting user.email: %v", err)
 	}
 
-	fmt.Printf("%s %s\n", pkg.SprintfBold(strings.TrimSpace(userName)), pkg.SprintfGrey(strings.TrimSpace(email)))
+	fmt.Printf("%s %s\n", txt.Boldf(strings.TrimSpace(userName)), txt.Greyf(strings.TrimSpace(email)))
 }
