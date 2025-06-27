@@ -4,6 +4,7 @@ import (
 	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
 	"github.com/connordoman/doman/cmd/example"
+	"github.com/connordoman/doman/cmd/fun"
 	"github.com/connordoman/doman/cmd/git"
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
@@ -43,6 +44,7 @@ func init() {
 	rootCmd.AddCommand(git.RemotesCommand)
 	rootCmd.AddCommand(npm.LockfileCommand)
 	rootCmd.AddCommand(sys.IPCommand)
+	rootCmd.AddCommand(fun.ShrugCommand)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
