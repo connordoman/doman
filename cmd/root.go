@@ -9,6 +9,7 @@ import (
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
 	"github.com/connordoman/doman/cmd/sys"
+	"github.com/connordoman/doman/cmd/weather"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/spf13/cobra"
@@ -45,6 +46,7 @@ func init() {
 	rootCmd.AddCommand(npm.LockfileCommand)
 	rootCmd.AddCommand(sys.IPCommand)
 	rootCmd.AddCommand(fun.ShrugCommand)
+	rootCmd.AddCommand(weather.WeatherCommand)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
