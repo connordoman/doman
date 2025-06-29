@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/connordoman/doman/internal/color"
+
 	"github.com/spf13/viper"
 )
 
@@ -82,6 +85,100 @@ type Wind struct {
 type Location struct {
 	Lat float64 `json:"latitude"`
 	Lon float64 `json:"longitude"`
+}
+
+var temperatureStyle = lipgloss.NewStyle().Bold(true)
+
+func TemperatureString(temp float64) string {
+	if temp == 0 {
+		return "0°C"
+	}
+	return fmt.Sprintf("%.1f°C", temp)
+}
+
+func TemperatureStringColored(temp float64) string {
+	if temp == 0 {
+		return "0°C"
+	}
+
+	temperatureString := TemperatureString(temp)
+
+	fromColor, fromErr := color.FromHex("#1e40af")
+	if fromErr != nil {
+		return temperatureString
+	}
+	toColor, toErr := color.FromHex("#c2410c")
+	if toErr != nil {
+		return temperatureString
+	}
+	if temp < 30 {
+
+	}
+
+	percent := max(0, min(100, int((temp+35)/100*100)))
+	interpolatedColor := fromColor.Interpolate(*toColor, percent)
+
+	return temperatureStyle.Foreground(lipgloss.Color(interpolatedColor.ToHex())).Render(temperatureString)
+}
+
+func WeatherIcon(icon string) string {
+	if len(icon) != 3 {
+		log.Printf("Invalid weather icon code: %s", icon)
+		return ""
+	}
+
+	iconCode := icon[0:2]
+	dayTimeCode := icon[2:3]
+
+	var iconText string
+	var dayTime string
+
+	switch dayTimeCode {
+	case "d":
+		dayTime = "🌞"
+	case "n":
+		dayTime = "🌛"
+	}
+
+	switch iconCode {
+	case "01":
+		iconText = ""
+	case "02":
+		iconText = "🌥️"
+	case "03":
+		iconText = "☁️"
+	case "04":
+		iconText = "🌥️"
+	case "09":
+		iconText = "🌧️"
+	case "10":
+		iconText = "🌦️"
+	case "11":
+		iconText = "⛈️"
+	case "13":
+		iconText = "❄️"
+	case "50":
+		iconText = "🌫️"
+	default:
+		iconText = "🌚"
+	}
+
+	return fmt.Sprintf("%s%s", iconText, dayTime)
+
+}
+
+func (w *WeatherResponse) String() string {
+	icon := WeatherIcon(w.Weather[0].Icon)
+	temperature := TemperatureStringColored(w.Main.Temp)
+
+	return fmt.Sprintf("Weather in %s: %s, %s %s \u2013 Wind: %.1f m/s, Humidity: %d%%, Pressure: %d hPa",
+		w.Name, temperature, w.Weather[0].Description, icon, w.Wind.Speed, w.Main.Humidity, w.Main.Pressure)
+}
+
+func (w *WeatherResponse) ShortString() string {
+	icon := WeatherIcon(w.Weather[0].Icon)
+	temperature := TemperatureStringColored(w.Main.Temp)
+	return fmt.Sprintf("%s %s %s %s", w.Name, temperature, w.Weather[0].Description, icon)
 }
 
 func getWeatherApiUrl(lat, lon float64) string {
