@@ -8,7 +8,9 @@ import (
 	"github.com/connordoman/doman/cmd/git"
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
+	"github.com/connordoman/doman/cmd/rand"
 	"github.com/connordoman/doman/cmd/sys"
+	"github.com/connordoman/doman/cmd/version"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/spf13/cobra"
@@ -23,6 +25,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
+	SilenceErrors: true,
 }
 
 func init() {
@@ -45,6 +48,8 @@ func init() {
 	rootCmd.AddCommand(npm.LockfileCommand)
 	rootCmd.AddCommand(sys.IPCommand)
 	rootCmd.AddCommand(fun.ShrugCommand)
+	rootCmd.AddCommand(rand.RandCommand)
+	rootCmd.AddCommand(version.VersionCommand)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)

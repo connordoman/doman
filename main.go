@@ -4,10 +4,11 @@ import (
 	"log"
 
 	"github.com/connordoman/doman/cmd"
+	"github.com/connordoman/doman/internal/txt"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
-		log.Fatalf("Error executing command: %v", err)
+		log.Fatal(txt.Errorf("fatal: %v", err))
 	}
 }
