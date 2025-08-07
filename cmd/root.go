@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
+	configCmd "github.com/connordoman/doman/cmd/config"
 	"github.com/connordoman/doman/cmd/example"
 	"github.com/connordoman/doman/cmd/fun"
 	"github.com/connordoman/doman/cmd/git"
@@ -41,15 +42,18 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("echo", "e", false, "Print the underlying commands being executed")
 
 	// Commands
-	rootCmd.AddCommand(ask.AskCommand)
-	rootCmd.AddCommand(completions.CompletionsCommand)
-	rootCmd.AddCommand(git.AuthorCommand)
-	rootCmd.AddCommand(git.RemotesCommand)
-	rootCmd.AddCommand(npm.LockfileCommand)
-	rootCmd.AddCommand(sys.IPCommand)
-	rootCmd.AddCommand(fun.ShrugCommand)
-	rootCmd.AddCommand(rand.RandCommand)
-	rootCmd.AddCommand(version.VersionCommand)
+	rootCmd.AddCommand(
+		ask.AskCommand,
+		completions.CompletionsCommand,
+		git.AuthorCommand,
+		git.RemotesCommand,
+		npm.LockfileCommand,
+		sys.IPCommand,
+		fun.ShrugCommand,
+		rand.RandCommand,
+		version.VersionCommand,
+		configCmd.ConfigCommand,
+	)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
