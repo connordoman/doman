@@ -1,10 +1,12 @@
 package ask
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/connordoman/doman/internal/txt"
@@ -53,9 +55,12 @@ func init() {
 	AskCommand.Flags().BoolP("setup", "s", false, "Setup AI service configuration")
 	AskCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-4o-mini)")
 	AskCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
+	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
+	verbose, _ := cmd.Flags().GetBool("verbose")
+
 	setup, err := cmd.Flags().GetBool("setup")
 	if err != nil {
 		return fmt.Errorf("failed to get setup flag: %w", err)
@@ -106,11 +111,31 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if model == "" {
 		model = viper.GetString("ask.openai.default_model")
 		if model == "" {
-			return fmt.Errorf("Model is required, please set it using --model or configure it in the setup")
+			return fmt.Errorf("model is required, please set it using --model or configure it in the setup")
 		}
 	}
 
-	pkg.PromptAi(model, apiKey, prompt)
+	spinnerPrompt := "Asking AI..."
+	if verbose {
+		spinnerPrompt = fmt.Sprintf("Asking AI with model %s...", txt.Boldf("%s", model))
+	}
+
+	var response string
+	if err := spinner.New().Title(spinnerPrompt).ActionWithErr(func(ctx context.Context) error {
+		response, err = pkg.PromptAi(model, apiKey, prompt)
+		if err != nil {
+			pkg.PrintError("Failed to get AI response: %v", err)
+			return err
+		}
+		return nil
+	}).Run(); err != nil {
+		return err
+	}
+
+	if response != "" {
+		fmt.Println(response)
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s", model), txt.Greyf("\u2022 Check important info for mistakes."))
+	}
 
 	return nil
 }
@@ -131,7 +156,7 @@ func runSetup() error {
 	switch askSetup.Service {
 	case "openai":
 		if askSetup.Model == "" {
-			return fmt.Errorf("Model is required for OpenAI service")
+			return fmt.Errorf("model is required for OpenAI service")
 		}
 		viper.Set("ask.openai.default_model", askSetup.Model)
 		viper.Set("ask.openai.api_key", askSetup.ApiKey)
@@ -144,7 +169,7 @@ func runSetup() error {
 	}
 
 	pkg.PrintSuccess("Configuration saved successfully!")
-	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf(txt.Boldf("doman ask")), txt.Greyf("to use your configuration."))
+	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf("%s", "doman ask"), txt.Greyf("to use your configuration."))
 
 	return nil
 }

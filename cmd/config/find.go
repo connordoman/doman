@@ -29,6 +29,6 @@ func runConfigFindCommand(cmd *cobra.Command, args []string) error {
 		configPath = fmt.Sprintf("\"%s\"", strings.TrimSpace(configPath))
 	}
 
-	cmd.Println(txt.Bluef("%s", configPath))
+	fmt.Println(txt.Bluef("%s", configPath))
 	return nil
 }
