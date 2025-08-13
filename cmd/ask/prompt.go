@@ -3,15 +3,19 @@ package ask
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+const (
+	AskingMessage = "Talking to robots"
 )
 
 type AskSetup struct {
@@ -25,6 +29,8 @@ var askSetup = &AskSetup{
 	Model:   "gpt-4o-mini",
 	ApiKey:  "",
 }
+
+var base16Theme *huh.Theme = huh.ThemeBase16()
 
 var setupForm = huh.NewForm(
 	huh.NewGroup(
@@ -43,7 +49,7 @@ var setupForm = huh.NewForm(
 			Title("API Key for "+askSetup.Service).
 			Value(&askSetup.ApiKey),
 	),
-)
+).WithTheme(base16Theme)
 
 var AskCommand = &cobra.Command{
 	Use:   "ask [prompt]",
@@ -115,18 +121,31 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	spinnerPrompt := "Asking AI..."
+	spinnerPrompt := AskingMessage + "..."
 	if verbose {
-		spinnerPrompt = fmt.Sprintf("Asking AI with model %s...", txt.Boldf("%s", model))
+		spinnerPrompt = fmt.Sprintf("%s %s...", AskingMessage, txt.Boldf("%s", model))
 	}
 
 	var response string
-	if err := spinner.New().Title(spinnerPrompt).ActionWithErr(func(ctx context.Context) error {
-		response, err = pkg.PromptAi(model, apiKey, prompt)
+	var pricing string
+	if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
+		completion, err := pkg.PromptAi(model, apiKey, prompt)
 		if err != nil {
-			pkg.PrintError("Failed to get AI response: %v", err)
 			return err
 		}
+
+		if verbose {
+			log.Printf("AI Response: %v", completion)
+		}
+
+		if response, err = pkg.FormatResponse(completion.Choices); err != nil {
+			return err
+		}
+
+		if cost, exists := pkg.CalculateCost(model, completion); exists {
+			pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
+		}
+
 		return nil
 	}).Run(); err != nil {
 		return err
@@ -134,7 +153,9 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 	if response != "" {
 		fmt.Println(response)
-		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s", model), txt.Greyf("\u2022 Check important info for mistakes."))
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s", model, pricing), txt.Greyf("\u2022 Check important info for mistakes."))
+	} else {
+		fmt.Println(txt.Italicf("No response received"))
 	}
 
 	return nil
