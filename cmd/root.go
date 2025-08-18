@@ -26,8 +26,8 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
-	// SilenceErrors: true,
-	// SilenceUsage:  true,
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func init() {
@@ -41,6 +41,7 @@ func init() {
 
 	// Flags
 	rootCmd.PersistentFlags().BoolP("echo", "e", false, "Print the underlying commands being executed")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	// Commands
 	rootCmd.AddCommand(
@@ -54,6 +55,8 @@ func init() {
 		rand.RandCommand,
 		version.VersionCommand,
 		configCmd.ConfigCommand,
+		SqrtCmd,
+		AliasCmd,
 	)
 
 	// Subject to removal
