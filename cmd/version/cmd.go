@@ -14,10 +14,10 @@ var VersionCommand = &cobra.Command{
 }
 
 func init() {
-
+	VersionCommand.AddCommand(BumpCommand)
 }
 
 func runVersionCommand(cmd *cobra.Command, args []string) error {
-	fmt.Println(pkg.Version())
+	fmt.Println(pkg.VersionString())
 	return nil
 }

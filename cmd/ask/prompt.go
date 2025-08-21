@@ -143,7 +143,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			log.Printf("AI Response: %v", completion)
 		}
 
-		if response, err = pkg.CollectResponse(completion.Choices, !raw); err != nil {
+		if response, err = pkg.CollectResponse(completion.Choices, raw); err != nil {
 			return err
 		}
 

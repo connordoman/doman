@@ -27,7 +27,7 @@ var (
 		Long:  "This command serves as an example to demonstrate how to create a command with Cobra and style it using Lipgloss.",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(ExampleStyle.Render("Dominion Manager"))
-			pkg.PrintInfo(pkg.Version())
+			pkg.PrintInfo(pkg.VersionString())
 
 		},
 	}
