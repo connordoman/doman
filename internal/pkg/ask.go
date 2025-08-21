@@ -64,7 +64,7 @@ func PromptAi(model, apiKey, prompt string) (*openai.ChatCompletion, error) {
 	return chatCompletion, nil
 }
 
-func FormatResponse(choices []openai.ChatCompletionChoice) (string, error) {
+func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, error) {
 	var result string
 
 	if len(choices) == 0 {
@@ -84,13 +84,22 @@ func FormatResponse(choices []openai.ChatCompletionChoice) (string, error) {
 		content = strings.ReplaceAll(content, "\n\n\n\n", "\n\n")
 		content = strings.TrimSpace(content)
 
-		formatted, err := style.Render(content)
-		if err != nil {
-			return "", fmt.Errorf("failed to render response: %w", err)
-		}
+		if raw {
+			result += content
+		} else {
+			formatted, err := style.Render(content)
+			if err != nil {
+				return "", fmt.Errorf("failed to render response: %w", err)
+			}
 
-		result += formatted
+			result += formatted
+		}
 	}
+
+	if raw {
+		result += "\n"
+	}
+
 	return result, nil
 }
 

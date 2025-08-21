@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/pkg/timer"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -62,10 +63,12 @@ func init() {
 	AskCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-4o-mini)")
 	AskCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
 	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
+	AskCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
 	verbose, _ := cmd.Flags().GetBool("verbose")
+	raw, _ := cmd.Flags().GetBool("raw")
 
 	setup, err := cmd.Flags().GetBool("setup")
 	if err != nil {
@@ -126,6 +129,8 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		spinnerPrompt = fmt.Sprintf("%s %s...", AskingMessage, txt.Boldf("%s", model))
 	}
 
+	timer := timer.NewStopwatch(true)
+
 	var response string
 	var pricing string
 	if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
@@ -138,7 +143,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			log.Printf("AI Response: %v", completion)
 		}
 
-		if response, err = pkg.FormatResponse(completion.Choices); err != nil {
+		if response, err = pkg.CollectResponse(completion.Choices, !raw); err != nil {
 			return err
 		}
 
@@ -151,9 +156,12 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	timer.Stop()
+
 	if response != "" {
+		fmt.Println()
 		fmt.Println(response)
-		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s", model, pricing), txt.Greyf("\u2022 Check important info for mistakes."))
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), txt.Greyf("\u2022 Check important info for mistakes."))
 	} else {
 		fmt.Println(txt.Italicf("No response received"))
 	}

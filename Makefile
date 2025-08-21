@@ -6,7 +6,7 @@ INSTALL_PATH=/usr/local/bin
 MODULE := github.com/connordoman/doman
 CONFIG_PATH := internal/config
 
-VERSION := v0.1.0
+VERSION := v$(shell if [ -f VERSION ]; then cat VERSION; else echo "0.1.0"; fi)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
