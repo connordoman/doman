@@ -3,13 +3,14 @@ package cmd
 import (
 	"fmt"
 
+	aliasCmd "github.com/connordoman/doman/cmd/alias"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg/alias"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 
-var AliasCmd = &cobra.Command{
+var AliasCommand = &cobra.Command{
 	Use:   "alias <name> <command>",
 	Short: "Create an an alias for a command",
 	RunE:  runAliasCmd,
@@ -17,7 +18,13 @@ var AliasCmd = &cobra.Command{
 }
 
 func init() {
-	AliasCmd.Flags().StringP("description", "d", "", "Description of the alias")
+	AliasCommand.Flags().StringP("description", "d", "", "Description of the alias")
+
+	AliasCommand.AddCommand(
+		aliasCmd.AliasListCommand,
+		aliasCmd.AliasDeleteCommand,
+		aliasCmd.AliasSetupCommand,
+	)
 }
 
 func runAliasCmd(cmd *cobra.Command, args []string) error {
@@ -57,8 +64,14 @@ func runAliasCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(txt.Successf("created alias file at \"%s\"", aliasPath))
+	if verbose {
+		fmt.Println(txt.Bluef("saved alias to \"%q\"", aliasPath))
+	}
+	fmt.Println(txt.Successf("alias created"))
+	fmt.Println(txt.Greyf("%s", txt.Separator()))
 	fmt.Println(a)
+	fmt.Println(txt.Greyf("%s", txt.Separator()))
+	alias.PrintReloadWarning()
 
 	return nil
 }

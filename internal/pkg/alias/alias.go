@@ -18,6 +18,29 @@ func contains(s, token string) bool {
 	return strings.Contains(s, token)
 }
 
+func alphaNumeric(s string) bool {
+	for _, r := range s {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
+			return false
+		}
+	}
+	return true
+}
+
+func startsNumeric(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	return s[0] >= '0' && s[0] <= '9'
+}
+
+func startsUnderscores(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	return s[0] == '_'
+}
+
 func NewAlias(name, command string) (*Alias, error) {
 	if name == "" {
 		return nil, fmt.Errorf("alias name cannot be empty")
@@ -27,13 +50,17 @@ func NewAlias(name, command string) (*Alias, error) {
 
 	if contains(name, " ") {
 		return nil, fmt.Errorf("alias name cannot contain spaces")
+	} else if !alphaNumeric(name) {
+		return nil, fmt.Errorf("alias name can only contain letters, numbers, or underscores")
+	} else if startsNumeric(name) {
+		return nil, fmt.Errorf("alias name cannot start with a number")
+	} else if startsUnderscores(name) {
+		return nil, fmt.Errorf("alias name cannot start with an underscore")
 	}
 
 	if contains(command, "\"") {
 		return nil, fmt.Errorf("alias command cannot contain double quotes")
-	}
-
-	if contains(command, "\n") {
+	} else if contains(command, "\n") {
 		return nil, fmt.Errorf("alias command cannot contain newlines")
 	}
 

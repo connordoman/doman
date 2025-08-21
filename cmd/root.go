@@ -56,7 +56,7 @@ func init() {
 		version.VersionCommand,
 		configCmd.ConfigCommand,
 		SqrtCmd,
-		AliasCmd,
+		AliasCommand,
 	)
 
 	// Subject to removal

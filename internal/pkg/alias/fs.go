@@ -3,6 +3,7 @@ package alias
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -94,4 +95,44 @@ func AddAliasLoaderScriptToZshrc() error {
 	}
 
 	return nil
+}
+
+func ListAliases() ([]string, error) {
+	aliasesDir, err := AliasFolderPath()
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := os.ReadDir(aliasesDir)
+	if err != nil {
+		return nil, err
+	}
+
+	aliases := []string{}
+
+	for _, f := range files {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".zsh") {
+			continue
+		}
+		aliases = append(aliases, strings.ReplaceAll(f.Name(), ".zsh", ""))
+	}
+	return aliases, nil
+}
+
+func DeleteAlias(a string) error {
+	aliasesDir, err := AliasFolderPath()
+	if err != nil {
+		return err
+	}
+
+	aliasFilePath := filepath.Join(aliasesDir, a)
+	if !strings.HasSuffix(aliasFilePath, ".zsh") {
+		aliasFilePath += ".zsh"
+	}
+
+	if !pkg.FileExists(aliasFilePath) {
+		return fmt.Errorf("alias %q does not exist", a)
+	}
+
+	return os.Remove(aliasFilePath)
 }
