@@ -18,17 +18,16 @@ ldflags:
 	@echo $(LD_FLAGS)
 
 build:
-	go build -o bin/$(BINARY_NAME) -ldflags "$(LD_FLAGS)" .
+	go build -ldflags "$(LD_FLAGS)" .
 
-install: build
-	sudo cp bin/$(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
+install:
+	go install -ldflags "$(LD_FLAGS)" .
 
-install-user: build
-	mkdir -p $(HOME)/.local/bin
-	cp bin/$(BINARY_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
+install-user:
+	go install -ldflags "$(LD_FLAGS)" .
 
 clean:
-	rm -rf bin/
+	go clean -cache
 
 uninstall:
 	sudo rm -f $(INSTALL_PATH)/$(BINARY_NAME)
