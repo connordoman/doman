@@ -1,12 +1,16 @@
-package ask
+package cmd
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"math/rand"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/pkg/timer"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,6 +27,8 @@ var askSetup = &AskSetup{
 	Model:   "gpt-4o-mini",
 	ApiKey:  "",
 }
+
+var base16Theme *huh.Theme = huh.ThemeBase16()
 
 var setupForm = huh.NewForm(
 	huh.NewGroup(
@@ -41,7 +47,7 @@ var setupForm = huh.NewForm(
 			Title("API Key for "+askSetup.Service).
 			Value(&askSetup.ApiKey),
 	),
-)
+).WithTheme(base16Theme)
 
 var AskCommand = &cobra.Command{
 	Use:   "ask [prompt]",
@@ -53,9 +59,14 @@ func init() {
 	AskCommand.Flags().BoolP("setup", "s", false, "Setup AI service configuration")
 	AskCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-4o-mini)")
 	AskCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
+	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
+	AskCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	raw, _ := cmd.Flags().GetBool("raw")
+
 	setup, err := cmd.Flags().GetBool("setup")
 	if err != nil {
 		return fmt.Errorf("failed to get setup flag: %w", err)
@@ -106,11 +117,53 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if model == "" {
 		model = viper.GetString("ask.openai.default_model")
 		if model == "" {
-			return fmt.Errorf("Model is required, please set it using --model or configure it in the setup")
+			return fmt.Errorf("model is required, please set it using --model or configure it in the setup")
 		}
 	}
 
-	pkg.PromptAi(model, apiKey, prompt)
+	askingMessage := pkg.AskSplashText[rand.Intn(len(pkg.AskSplashText))]
+
+	spinnerPrompt := askingMessage + "..."
+	if verbose {
+		spinnerPrompt = fmt.Sprintf("%s %s...", askingMessage, txt.Boldf("%s", model))
+	}
+
+	timer := timer.NewStopwatch(true)
+
+	var response string
+	var pricing string
+	if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
+		completion, err := pkg.PromptAi(model, apiKey, prompt)
+		if err != nil {
+			return err
+		}
+
+		if verbose {
+			log.Printf("AI Response: %v", completion)
+		}
+
+		if response, err = pkg.CollectResponse(completion.Choices, raw); err != nil {
+			return err
+		}
+
+		if cost, exists := pkg.CalculateCost(model, completion); exists {
+			pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
+		}
+
+		return nil
+	}).Run(); err != nil {
+		return err
+	}
+
+	timer.Stop()
+
+	if response != "" {
+		fmt.Println()
+		fmt.Println(response)
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), txt.Greyf("\u2022 Check important info for mistakes."))
+	} else {
+		fmt.Println(txt.Italicf("No response received"))
+	}
 
 	return nil
 }
@@ -131,7 +184,7 @@ func runSetup() error {
 	switch askSetup.Service {
 	case "openai":
 		if askSetup.Model == "" {
-			return fmt.Errorf("Model is required for OpenAI service")
+			return fmt.Errorf("model is required for OpenAI service")
 		}
 		viper.Set("ask.openai.default_model", askSetup.Model)
 		viper.Set("ask.openai.api_key", askSetup.ApiKey)
@@ -144,7 +197,7 @@ func runSetup() error {
 	}
 
 	pkg.PrintSuccess("Configuration saved successfully!")
-	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf(txt.Boldf("doman ask")), txt.Greyf("to use your configuration."))
+	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf("doman ask"), txt.Greyf("to use your configuration."))
 
 	return nil
 }

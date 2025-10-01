@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
-	"github.com/connordoman/doman/cmd/example"
-	"github.com/connordoman/doman/cmd/fun"
-	"github.com/connordoman/doman/cmd/git"
+	configCmd "github.com/connordoman/doman/cmd/config"
 	go_self "github.com/connordoman/doman/cmd/go"
-	"github.com/connordoman/doman/cmd/npm"
-	"github.com/connordoman/doman/cmd/sys"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/spf13/cobra"
@@ -23,6 +18,8 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func init() {
@@ -36,19 +33,21 @@ func init() {
 
 	// Flags
 	rootCmd.PersistentFlags().BoolP("echo", "e", false, "Print the underlying commands being executed")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	// Commands
-	rootCmd.AddCommand(ask.AskCommand)
+	rootCmd.AddCommand(AskCommand)
 	rootCmd.AddCommand(completions.CompletionsCommand)
-	rootCmd.AddCommand(git.AuthorCommand)
-	rootCmd.AddCommand(git.RemotesCommand)
-	rootCmd.AddCommand(npm.LockfileCommand)
-	rootCmd.AddCommand(sys.IPCommand)
-	rootCmd.AddCommand(fun.ShrugCommand)
+	rootCmd.AddCommand(GitCommand)
+	rootCmd.AddCommand(NPMCommand)
+	rootCmd.AddCommand(ShrugCommand)
+	rootCmd.AddCommand(IPCommand)
+	rootCmd.AddCommand(configCmd.ConfigCommand)
+	rootCmd.AddCommand(SqrtCmd)
+	rootCmd.AddCommand(AliasCommand)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
-	rootCmd.AddCommand(example.ExampleCommand)
 }
 
 func Execute() error {
