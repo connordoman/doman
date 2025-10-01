@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
 	configCmd "github.com/connordoman/doman/cmd/config"
 	go_self "github.com/connordoman/doman/cmd/go"
@@ -37,7 +36,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	// Commands
-	rootCmd.AddCommand(ask.AskCommand)
+	rootCmd.AddCommand(AskCommand)
 	rootCmd.AddCommand(completions.CompletionsCommand)
 	rootCmd.AddCommand(GitCommand)
 	rootCmd.AddCommand(NPMCommand)

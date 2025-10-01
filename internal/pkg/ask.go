@@ -42,6 +42,48 @@ var (
 	}
 )
 
+var askSplashText = []string{
+	"Talking to robots",
+	"Getting the skinny",
+	"Finding the hay in the needle stack",
+	"Pushing to production",
+	"Talking to the little man",
+	"Getting a second opinion",
+	"Looking it up for you (even though you could probably do it)",
+	"Getting the lowdown",
+	"Writing a strongly worded letter",
+	"Lighting a signal fire",
+	"Using a small village's electricity budget for this",
+	"Asking the AI to ask the AI",
+	"Preparing to shut off PS4",
+	"Castling",
+	"Throwing it back",
+	"Consulting the tea leaves",
+	"Praying to god",
+	"Shooting the messenger",
+	"Texting my mom",
+	"Figuring out the hard way",
+	"Firing my assistant",
+	"Thinking about stuff",
+	"Letting the voices in",
+	"Getting the instructions out of the garbage",
+	"Going back to school",
+	"Definitely not just Googling it",
+	"Finishing my protein shake first",
+	"Playing the long game",
+	"Asking my supervisor",
+	"F***ing around in hopes of finding out",
+	"Calling your boss",
+	"Reading your diary",
+	"Waking up early to get the worm",
+	"Making a quick buck",
+	"Sending a message in a bottle",
+	"Asking Dr. Wilson for a consult",
+	"I'm working on it",
+	"Swiping right",
+	"Finishing my bathroom break",
+}
+
 func PromptAi(model, apiKey, prompt string) (*openai.ChatCompletion, error) {
 	systemMessage := viper.GetString("ask.system_message")
 	client := openai.NewClient(option.WithAPIKey(apiKey))

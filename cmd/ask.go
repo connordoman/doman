@@ -1,4 +1,4 @@
-package ask
+package cmd
 
 import (
 	"context"
@@ -198,7 +198,7 @@ func runSetup() error {
 	}
 
 	pkg.PrintSuccess("Configuration saved successfully!")
-	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf("%s", "doman ask"), txt.Greyf("to use your configuration."))
+	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf("doman ask"), txt.Greyf("to use your configuration."))
 
 	return nil
 }
