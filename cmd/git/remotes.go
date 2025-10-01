@@ -10,7 +10,7 @@ import (
 )
 
 var RemotesCommand = &cobra.Command{
-	Use:   "git.remotes",
+	Use:   "remotes",
 	Short: "Print a list of git remotes",
 	Run:   executeRemotes,
 }
@@ -77,5 +77,5 @@ func formatRemote(remote string) (string, error) {
 		fetchIcon = "↓"
 	}
 
-	return fmt.Sprintf("%s %s %s", txt.Boldf(name), txt.Greyf(url), fetchIcon), nil
+	return fmt.Sprintf("%s %s %s", txt.Boldf("%s", name), fetchIcon, txt.Greyf("%s", url)), nil
 }

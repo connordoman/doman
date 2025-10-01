@@ -11,7 +11,7 @@ import (
 )
 
 var AuthorCommand = &cobra.Command{
-	Use:   "git.author",
+	Use:   "author",
 	Short: "Print the current git.user & git.email",
 	Run:   executeAuthor,
 }
@@ -42,5 +42,5 @@ func executeAuthor(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error getting user.email: %v", err)
 	}
 
-	fmt.Printf("%s %s\n", txt.Boldf("%s", strings.TrimSpace(userName)), txt.Greyf("%s", strings.TrimSpace(email)))
+	fmt.Printf("%s\t%s\n", txt.Boldf("\ueb99 %s", strings.TrimSpace(userName)), txt.Greyf("\ueb1c %s", strings.TrimSpace(email)))
 }

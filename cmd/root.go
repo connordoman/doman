@@ -4,8 +4,6 @@ import (
 	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
 	configCmd "github.com/connordoman/doman/cmd/config"
-	"github.com/connordoman/doman/cmd/fun"
-	"github.com/connordoman/doman/cmd/git"
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
 	"github.com/connordoman/doman/cmd/rand"
@@ -42,20 +40,17 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	// Commands
-	rootCmd.AddCommand(
-		ask.AskCommand,
-		completions.CompletionsCommand,
-		git.AuthorCommand,
-		git.RemotesCommand,
-		npm.LockfileCommand,
-		IPCommand,
-		fun.ShrugCommand,
-		rand.RandCommand,
-		version.VersionCommand,
-		configCmd.ConfigCommand,
-		SqrtCmd,
-		AliasCommand,
-	)
+	rootCmd.AddCommand(ask.AskCommand)
+	rootCmd.AddCommand(completions.CompletionsCommand)
+	rootCmd.AddCommand(GitCommand)
+	rootCmd.AddCommand(npm.LockfileCommand)
+	rootCmd.AddCommand(ShrugCommand)
+	rootCmd.AddCommand(IPCommand)
+	rootCmd.AddCommand(rand.RandCommand)
+	rootCmd.AddCommand(version.VersionCommand)
+	rootCmd.AddCommand(configCmd.ConfigCommand)
+	rootCmd.AddCommand(SqrtCmd)
+	rootCmd.AddCommand(AliasCommand)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
