@@ -8,13 +8,13 @@ import (
 )
 
 func PrintSuccess(format string, args ...any) {
-	str := fmt.Sprintf("✔ "+format, args...)
-	fmt.Println(txt.Successf(str))
+	str := fmt.Sprintf(format+" ✔", args...)
+	fmt.Println(txt.Successf("%s", str))
 }
 
 func PrintError(format string, args ...any) {
-	str := fmt.Sprintf("✘ "+format, args...)
-	fmt.Fprintln(os.Stderr, txt.Errorf(str))
+	str := fmt.Sprintf(format+" ✘", args...)
+	fmt.Fprintln(os.Stderr, txt.Errorf("%s", str))
 }
 
 func PrintInfo(format string, args ...any) {

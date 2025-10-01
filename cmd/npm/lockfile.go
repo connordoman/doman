@@ -8,7 +8,7 @@ import (
 )
 
 var LockfileCommand = &cobra.Command{
-	Use:   "npm.lockfile",
+	Use:   "lockfile",
 	Short: "Generate a lockfile for the current npm project without installing node_modules",
 	Run:   executeLockfile,
 }

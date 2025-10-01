@@ -10,7 +10,7 @@ import (
 const shrugEmoticon = "¯\\_(ツ)_/¯"
 
 var ShrugCommand = &cobra.Command{
-	Use:   "fun.shrug",
+	Use:   "shrug",
 	Short: "Print a shrug emoticon " + shrugEmoticon,
 	Run:   executeShrug,
 }

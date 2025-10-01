@@ -5,9 +5,6 @@ import (
 	"github.com/connordoman/doman/cmd/completions"
 	configCmd "github.com/connordoman/doman/cmd/config"
 	go_self "github.com/connordoman/doman/cmd/go"
-	"github.com/connordoman/doman/cmd/npm"
-	"github.com/connordoman/doman/cmd/rand"
-	"github.com/connordoman/doman/cmd/version"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/spf13/cobra"
@@ -43,11 +40,9 @@ func init() {
 	rootCmd.AddCommand(ask.AskCommand)
 	rootCmd.AddCommand(completions.CompletionsCommand)
 	rootCmd.AddCommand(GitCommand)
-	rootCmd.AddCommand(npm.LockfileCommand)
+	rootCmd.AddCommand(NPMCommand)
 	rootCmd.AddCommand(ShrugCommand)
 	rootCmd.AddCommand(IPCommand)
-	rootCmd.AddCommand(rand.RandCommand)
-	rootCmd.AddCommand(version.VersionCommand)
 	rootCmd.AddCommand(configCmd.ConfigCommand)
 	rootCmd.AddCommand(SqrtCmd)
 	rootCmd.AddCommand(AliasCommand)
