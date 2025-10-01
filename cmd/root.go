@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/connordoman/doman/cmd/completions"
-	configCmd "github.com/connordoman/doman/cmd/config"
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
@@ -36,15 +35,19 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	// Commands
-	rootCmd.AddCommand(AskCommand)
-	rootCmd.AddCommand(completions.CompletionsCommand)
-	rootCmd.AddCommand(GitCommand)
-	rootCmd.AddCommand(NPMCommand)
-	rootCmd.AddCommand(ShrugCommand)
-	rootCmd.AddCommand(IPCommand)
-	rootCmd.AddCommand(configCmd.ConfigCommand)
-	rootCmd.AddCommand(SqrtCmd)
-	rootCmd.AddCommand(AliasCommand)
+	rootCmd.AddCommand(
+		AskCommand,
+		completions.CompletionsCommand,
+		GitCommand,
+		NPMCommand,
+		ShrugCommand,
+		IPCommand,
+		ConfigCommand,
+		SqrtCmd,
+		AliasCommand,
+		VersionCommand,
+		RandCommand,
+	)
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)

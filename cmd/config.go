@@ -1,6 +1,9 @@
-package config
+package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/connordoman/doman/cmd/config"
+	"github.com/spf13/cobra"
+)
 
 var ConfigCommand = &cobra.Command{
 	Use:   "config",
@@ -10,6 +13,6 @@ var ConfigCommand = &cobra.Command{
 
 func init() {
 	ConfigCommand.AddCommand(
-		FindConfigCommand,
+		config.FindConfigCommand,
 	)
 }
