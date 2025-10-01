@@ -1,15 +1,14 @@
-package sys
+package cmd
 
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"strings"
 
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/connordoman/doman/internal/txt"
+	"github.com/connordoman/doman/internal/web"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +18,7 @@ type IPCommandJSON struct {
 }
 
 var IPCommand = &cobra.Command{
-	Use:   "sys.ip",
+	Use:   "ip",
 	Short: "View your IP address",
 	Run:   executeIPCommand,
 }
@@ -54,20 +53,14 @@ func executeIPCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	localIPString := formatIP("local", localIP)
-	publicIPString := formatIP("public", publicIP)
+	localIPString := formatIP("\ueb06 local", localIP)
+	publicIPString := formatIP("\ueb01 public", publicIP)
 
 	fmt.Printf("%s\n%s\n", localIPString, publicIPString)
 }
 
 func getPublicIP() (string, error) {
-	resp, err := http.Get("https://icanhazip.com")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	body, err := web.Fetch("https://icanhazip.com")
 	if err != nil {
 		return "", err
 	}
@@ -92,5 +85,5 @@ func getLocalIP() (string, error) {
 }
 
 func formatIP(context, ip string) string {
-	return fmt.Sprintf("%s\t%s", txt.Greyf(context), txt.Boldf(ip))
+	return fmt.Sprintf("%s%s", txt.Greyf("%-12s", context), txt.Boldf("%s", ip))
 }

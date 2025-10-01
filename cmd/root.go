@@ -10,7 +10,6 @@ import (
 	go_self "github.com/connordoman/doman/cmd/go"
 	"github.com/connordoman/doman/cmd/npm"
 	"github.com/connordoman/doman/cmd/rand"
-	"github.com/connordoman/doman/cmd/sys"
 	"github.com/connordoman/doman/cmd/version"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/pkg"
@@ -50,7 +49,7 @@ func init() {
 		git.AuthorCommand,
 		git.RemotesCommand,
 		npm.LockfileCommand,
-		sys.IPCommand,
+		IPCommand,
 		fun.ShrugCommand,
 		rand.RandCommand,
 		version.VersionCommand,
