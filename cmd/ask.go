@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -13,10 +14,6 @@ import (
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-const (
-	AskingMessage = "Talking to robots"
 )
 
 type AskSetup struct {
@@ -124,9 +121,11 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	spinnerPrompt := AskingMessage + "..."
+	askingMessage := pkg.AskSplashText[rand.Intn(len(pkg.AskSplashText))]
+
+	spinnerPrompt := askingMessage + "..."
 	if verbose {
-		spinnerPrompt = fmt.Sprintf("%s %s...", AskingMessage, txt.Boldf("%s", model))
+		spinnerPrompt = fmt.Sprintf("%s %s...", askingMessage, txt.Boldf("%s", model))
 	}
 
 	timer := timer.NewStopwatch(true)

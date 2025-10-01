@@ -42,7 +42,7 @@ var (
 	}
 )
 
-var askSplashText = []string{
+var AskSplashText = []string{
 	"Talking to robots",
 	"Getting the skinny",
 	"Finding the hay in the needle stack",
