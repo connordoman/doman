@@ -4,7 +4,6 @@ import (
 	"github.com/connordoman/doman/cmd/ask"
 	"github.com/connordoman/doman/cmd/completions"
 	configCmd "github.com/connordoman/doman/cmd/config"
-	"github.com/connordoman/doman/cmd/example"
 	"github.com/connordoman/doman/cmd/fun"
 	"github.com/connordoman/doman/cmd/git"
 	go_self "github.com/connordoman/doman/cmd/go"
@@ -60,7 +59,6 @@ func init() {
 
 	// Subject to removal
 	rootCmd.AddCommand(go_self.RunCommand)
-	rootCmd.AddCommand(example.ExampleCommand)
 }
 
 func Execute() error {
