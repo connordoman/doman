@@ -3,6 +3,8 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/glamour"
@@ -11,6 +13,7 @@ import (
 	openai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/spf13/viper"
+	"golang.org/x/term"
 )
 
 // Cost per million tokens
@@ -21,8 +24,6 @@ type ModelPricing struct {
 }
 
 var (
-	style, _ = glamour.NewTermRenderer(glamour.WithAutoStyle())
-
 	costTable = map[string]ModelPricing{
 		"gpt-5-nano": {
 			InputCost:       0.050,
@@ -72,7 +73,7 @@ var AskSplashText = []string{
 	"Finishing my protein shake first",
 	"Playing the long game",
 	"Asking my supervisor",
-	"F***ing around in hopes of finding out",
+	"F***ing around in hope of finding out",
 	"Calling your boss",
 	"Reading your diary",
 	"Waking up early to get the worm",
@@ -113,6 +114,20 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 		return "", fmt.Errorf("no choices returned from AI response")
 	}
 
+	// Initialize a width-aware markdown renderer when not in raw mode
+	var renderer *glamour.TermRenderer
+	if !raw {
+		width := detectTerminalWidth()
+		if width < 20 {
+			width = 20
+		}
+		r, _ := glamour.NewTermRenderer(
+			glamour.WithAutoStyle(),
+			glamour.WithWordWrap(width),
+		)
+		renderer = r
+	}
+
 	for i, choice := range choices {
 		// Debug: print the choice structure
 		// fmt.Printf("DEBUG: Choice %d - Role: %s, FinishReason: %s\n",
@@ -129,7 +144,7 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 		if raw {
 			result += content
 		} else {
-			formatted, err := style.Render(content)
+			formatted, err := renderer.Render(content)
 			if err != nil {
 				return "", fmt.Errorf("failed to render response: %w", err)
 			}
@@ -166,4 +181,31 @@ func CalculateCost(model string, completion *openai.ChatCompletion) (float64, bo
 	totalCost += outputTokens * pricing.OutputCost
 
 	return totalCost / 1_000_000, true
+}
+
+// detectTerminalWidth returns the current terminal width in columns.
+// If width cannot be determined, it falls back to a sensible default of 80.
+func detectTerminalWidth() int {
+	// Respect COLUMNS if set and valid
+	if colsStr := os.Getenv("COLUMNS"); colsStr != "" {
+		if cols, err := strconv.Atoi(colsStr); err == nil && cols > 0 {
+			return cols
+		}
+	}
+
+	// Try stdout
+	if term.IsTerminal(int(os.Stdout.Fd())) {
+		if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+			return w
+		}
+	}
+
+	// Try stderr
+	if term.IsTerminal(int(os.Stderr.Fd())) {
+		if w, _, err := term.GetSize(int(os.Stderr.Fd())); err == nil && w > 0 {
+			return w
+		}
+	}
+
+	return 80
 }
