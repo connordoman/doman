@@ -94,10 +94,13 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 
 		prompt = strings.TrimSpace(prompt)
-		if prompt == "" {
-			return fmt.Errorf("prompt cannot be empty")
-		}
+
 	}
+	if prompt == "" {
+		return fmt.Errorf("prompt cannot be empty")
+	}
+
+	fmt.Println(txt.Boldf("%s", txt.Bluef("You:")), txt.Italicf("%s", prompt))
 
 	apiKey, err := cmd.Flags().GetString("api-key")
 	if err != nil {
