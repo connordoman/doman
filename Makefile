@@ -6,13 +6,20 @@ INSTALL_PATH=/usr/local/bin
 MODULE := github.com/connordoman/doman
 CONFIG_PATH := internal/config
 
-VERSION := v$(shell if [ -f VERSION ]; then cat VERSION; else echo "0.1.0"; fi)
+DEFAULT_VERSION := 0.0.0
+DEFAULT_BUILD := dev
+
+VERSION := v$(shell if [ -f VERSION ]; then cat VERSION; else echo $(DEFAULT_VERSION); fi)
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+BUILD ?= $(DEFAULT_BUILD)
+
+BRANCH_NAME := $(shell git branch --show-current)
 
 LD_FLAGS := -X '$(MODULE)/$(CONFIG_PATH).CommitHash=$(COMMIT_HASH)' \
 			-X '$(MODULE)/$(CONFIG_PATH).BuildDate=$(BUILD_TIME)' \
-			-X '$(MODULE)/$(CONFIG_PATH).Version=$(VERSION)'
+			-X '$(MODULE)/$(CONFIG_PATH).Version=$(VERSION)' \
+			-X '$(MODULE)/$(CONFIG_PATH).Build=$(BUILD)'
 
 ldflags:
 	@echo $(LD_FLAGS)
