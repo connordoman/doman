@@ -121,10 +121,31 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 		if width < 20 {
 			width = 20
 		}
-		r, _ := glamour.NewTermRenderer(
-			glamour.WithAutoStyle(),
-			glamour.WithWordWrap(width),
-		)
+
+		// Allow overriding the style; default to dark to avoid inverted code blocks
+		// in terminals where auto-detection is unreliable.
+		style := strings.ToLower(strings.TrimSpace(viper.GetString("ask.render_style")))
+
+		var opts []glamour.TermRendererOption
+		switch style {
+		case "auto":
+			opts = []glamour.TermRendererOption{
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(width),
+			}
+		case "light":
+			opts = []glamour.TermRendererOption{
+				glamour.WithStandardStyle("light"),
+				glamour.WithWordWrap(width),
+			}
+		default: // "dark" or unset
+			opts = []glamour.TermRendererOption{
+				glamour.WithStandardStyle("dark"),
+				glamour.WithWordWrap(width),
+			}
+		}
+
+		r, _ := glamour.NewTermRenderer(opts...)
 		renderer = r
 	}
 
