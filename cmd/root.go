@@ -47,6 +47,7 @@ func init() {
 		AliasCommand,
 		VersionCommand,
 		RandCommand,
+		WeatherCommand,
 	)
 
 	// Subject to removal
