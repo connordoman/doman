@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -26,6 +27,10 @@ const (
 	BumpPatch
 )
 
+const (
+	DefaultVersionFileLocation = "./VERSION"
+)
+
 type VersionInfo struct {
 	Major int
 	Minor int
@@ -35,6 +40,17 @@ type VersionInfo struct {
 type VersionFile struct {
 	Path    string
 	Version VersionInfo
+}
+
+func DefaultVersionFile() *VersionFile {
+	return &VersionFile{
+		Path: DefaultVersionFileLocation,
+		Version: VersionInfo{
+			Major: 0,
+			Minor: 0,
+			Patch: 0,
+		},
+	}
 }
 
 func OpenVersionFile(location string) (*VersionFile, error) {
@@ -96,6 +112,37 @@ func OpenVersionFile(location string) (*VersionFile, error) {
 	}, nil
 }
 
+func ParseVersionNumber(versionNumber string) (*VersionFile, error) {
+	versionRegex := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
+	versionString := versionRegex.ReplaceAllString(versionNumber, "$1.$2.$3")
+
+	versionSegments := strings.Split(versionString, ".")
+	if len(versionSegments) != 3 {
+		return nil, fmt.Errorf("invalid version format: expected 'major.minor.patch', got '%s'", versionNumber)
+	}
+
+	var err error
+	version := VersionInfo{}
+
+	version.Major, err = strconv.Atoi(versionSegments[0])
+	if err != nil {
+		return nil, err
+	}
+	version.Minor, err = strconv.Atoi(versionSegments[1])
+	if err != nil {
+		return nil, err
+	}
+	version.Patch, err = strconv.Atoi(versionSegments[2])
+	if err != nil {
+		return nil, err
+	}
+
+	return &VersionFile{
+		Path:    DefaultVersionFileLocation,
+		Version: version,
+	}, nil
+}
+
 func (vf VersionFile) String() string {
 	return fmt.Sprintf("%d.%d.%d", vf.Version.Major, vf.Version.Minor, vf.Version.Patch)
 }
@@ -104,7 +151,7 @@ func (vf *VersionFile) Save() error {
 	return os.WriteFile(vf.Path, []byte(vf.String()), 0644)
 }
 
-func (vf VersionFile) Bump(segment VersionSegment) error {
+func (vf *VersionFile) Bump(segment VersionSegment) {
 	switch segment {
 	case BumpMajor:
 		vf.Version.Major++
@@ -116,5 +163,4 @@ func (vf VersionFile) Bump(segment VersionSegment) error {
 	case BumpPatch:
 		vf.Version.Patch++
 	}
-	return vf.Save()
 }
