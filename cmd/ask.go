@@ -61,11 +61,16 @@ func init() {
 	AskCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
 	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
 	AskCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
+	AskCommand.Flags().String("style", "", "Markdown render style: dark|light|auto (default: dark)")
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	raw, _ := cmd.Flags().GetBool("raw")
+	// Optional render style override for this invocation
+	if style, _ := cmd.Flags().GetString("style"); style != "" {
+		viper.Set("ask.render_style", style)
+	}
 
 	setup, err := cmd.Flags().GetBool("setup")
 	if err != nil {
