@@ -16,7 +16,7 @@ var BumpCommand = &cobra.Command{
 	Short: "Bump the version number",
 	Long:  "Bump the version number",
 	RunE:  runBumpCommand,
-	Args:  cobra.MaximumNArgs(2),
+	Args:  cobra.RangeArgs(1, 2),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		verboseFlag, _ := cmd.Flags().GetBool("verbose")
 		if verboseFlag {
@@ -38,7 +38,10 @@ func runBumpCommand(cmd *cobra.Command, args []string) error {
 	versionFileFlag, _ := cmd.Flags().GetString("file")
 
 	argVersionSegment := args[0]
-	argVersionNumber := args[1]
+	argVersionNumber := ""
+	if len(args) > 1 {
+		argVersionNumber = args[1]
+	}
 
 	var versionInfo *config.VersionFile
 	var err error
