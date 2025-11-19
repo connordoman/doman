@@ -119,6 +119,19 @@ func GreenYellowRedGradient() Gradient {
 	}
 }
 
+func TemperatureGradient() Gradient {
+	return Gradient{
+		{T: 0.1, Color: RGB{R: 37, G: 99, B: 235}}, // #2563eb
+		{T: 0.4, Color: RGB{R: 6, G: 182, B: 212}}, // #06b6d4
+		{T: 0.6, Color: RGB{R: 22, G: 163, B: 74}}, // #16a34a
+		{T: 0.7, Color: RGB{R: 22, G: 163, B: 74}}, // #16a34a
+		// {T: 0.4, Color: RGB{R: 22, G: 163, B: 74}},  // #16a34a
+
+		{T: 0.8, Color: RGB{R: 250, G: 204, B: 21}}, // #facc15
+		{T: 1.0, Color: RGB{R: 239, G: 68, B: 68}},  // #ef4444
+	}
+}
+
 // ColorizePercent renders text using a gradient color mapped from percent in [0,100].
 func ColorizePercent(text string, percent float64, gradient Gradient) string {
 	t := percent / 100.0

@@ -305,7 +305,31 @@ func (w *WeatherResponse) BuildMonthly(monthlyVarNames []string) error {
 
 // Summary produces a short single-line human-readable description of the location context.
 func (w *WeatherResponse) Summary() string {
-	return fmt.Sprintf("Coordinates: %.4f°N %.4f°E | Elevation: %.0fm | UTC Offset: %ds", w.Latitude(), w.Longitude(), w.Elevation(), w.UtcOffsetSeconds())
+	// Format UTC offset as ±HH:MM instead of raw seconds
+	offsetSeconds := w.UtcOffsetSeconds()
+	offsetHours := offsetSeconds / 3600
+	offsetMinutes := (offsetSeconds % 3600) / 60
+	if offsetMinutes < 0 {
+		offsetMinutes = -offsetMinutes
+	}
+
+	var offsetStr string
+	if offsetSeconds >= 0 {
+		offsetStr = fmt.Sprintf("+%02d:%02d", offsetHours, offsetMinutes)
+	} else {
+		offsetStr = fmt.Sprintf("-%02d:%02d", -offsetHours, offsetMinutes)
+	}
+
+	// Include timezone name if available
+	tzName := w.Timezone()
+	var tzDisplay string
+	if tzName != "" {
+		tzDisplay = fmt.Sprintf("%s (UTC%s)", tzName, offsetStr)
+	} else {
+		tzDisplay = fmt.Sprintf("UTC%s", offsetStr)
+	}
+
+	return fmt.Sprintf("Coordinates: %.4f°N %.4f°E | Elevation: %.0fm | %s", w.Latitude(), w.Longitude(), w.Elevation(), tzDisplay)
 }
 
 // ForecastParams captures supported API parameters and can be transformed into URL values.

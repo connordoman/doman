@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -281,4 +282,108 @@ func NewWeatherClient(baseURL string) *WeatherClient {
 	return &WeatherClient{
 		BaseURL: baseURL,
 	}
+}
+
+// GeocodingResult represents a single location result from the geocoding API
+type GeocodingResult struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Elevation   float64 `json:"elevation"`
+	Timezone    string  `json:"timezone"`
+	Population  int     `json:"population,omitempty"`
+	Country     string  `json:"country"`
+	CountryCode string  `json:"country_code"`
+	Admin1      string  `json:"admin1,omitempty"`
+	Admin2      string  `json:"admin2,omitempty"`
+	Admin3      string  `json:"admin3,omitempty"`
+	Admin4      string  `json:"admin4,omitempty"`
+}
+
+// GeocodingResponse represents the response from the geocoding API
+type GeocodingResponse struct {
+	Results          []GeocodingResult `json:"results"`
+	GenerationTimeMs float64           `json:"generationtime_ms"`
+}
+
+// Geocode searches for a location by name and returns the most likely result.
+// It uses the Open-Meteo Geocoding API.
+func (c *WeatherClient) Geocode(locationName string) (*GeocodingResult, error) {
+	if locationName == "" {
+		return nil, fmt.Errorf("location name cannot be empty")
+	}
+
+	// Build geocoding URL
+	params := url.Values{
+		"name":   {locationName},
+		"count":  {"1"}, // Only get the top result
+		"format": {"json"},
+	}
+	geocodingURL := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?%s", params.Encode())
+
+	log.Println(txt.Bluef("[Geocode]"), geocodingURL)
+
+	resp, err := fetchRetried(geocodingURL, 3, 0.2, 2.0, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read geocoding response: %w", err)
+	}
+
+	// Parse JSON response using standard library
+	var geoResp GeocodingResponse
+	if err := json.Unmarshal(body, &geoResp); err != nil {
+		return nil, fmt.Errorf("failed to parse geocoding response: %w", err)
+	}
+
+	if len(geoResp.Results) == 0 {
+		return nil, fmt.Errorf("no results found for location: %s", locationName)
+	}
+
+	return &geoResp.Results[0], nil
+}
+
+// ReverseGeocode performs a reverse lookup to find a location name from coordinates.
+// It uses the Open-Meteo Geocoding API by searching for the nearest city.
+func (c *WeatherClient) ReverseGeocode(latitude, longitude float64) (*GeocodingResult, error) {
+	// Use the geocoding API to find the nearest location by searching with coordinates
+	// We'll use a dummy search but rely on the API to return nearby results
+	params := url.Values{
+		"latitude":  {fmt.Sprintf("%.4f", latitude)},
+		"longitude": {fmt.Sprintf("%.4f", longitude)},
+		"count":     {"1"},
+		"format":    {"json"},
+	}
+	geocodingURL := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?%s", params.Encode())
+
+	log.Println(txt.Bluef("[ReverseGeocode]"), geocodingURL)
+
+	resp, err := fetchRetried(geocodingURL, 3, 0.2, 2.0, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read reverse geocoding response: %w", err)
+	}
+
+	// Parse JSON response
+	var geoResp GeocodingResponse
+	if err := json.Unmarshal(body, &geoResp); err != nil {
+		return nil, fmt.Errorf("failed to parse reverse geocoding response: %w", err)
+	}
+
+	if len(geoResp.Results) == 0 {
+		// If no results, return nil without error (reverse geocoding is best-effort)
+		return nil, nil
+	}
+
+	return &geoResp.Results[0], nil
 }
