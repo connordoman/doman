@@ -95,14 +95,14 @@ type MessageHistory struct {
 func PromptAi(model, apiKey, prompt string, history []MessageHistory) (*openai.ChatCompletion, error) {
 	systemMessage := viper.GetString("ask.system_message")
 	client := openai.NewClient(option.WithAPIKey(apiKey))
-	
+
 	messages := []openai.ChatCompletionMessageParamUnion{}
-	
+
 	// Add system message if present
 	if systemMessage != "" {
 		messages = append(messages, openai.SystemMessage(systemMessage))
 	}
-	
+
 	// Add conversation history
 	for _, msg := range history {
 		switch msg.Role {
@@ -114,10 +114,10 @@ func PromptAi(model, apiKey, prompt string, history []MessageHistory) (*openai.C
 			messages = append(messages, openai.AssistantMessage(msg.Content))
 		}
 	}
-	
+
 	// Add current user prompt
 	messages = append(messages, openai.UserMessage(prompt))
-	
+
 	chatCompletion, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
 		Model:    model,
 		Messages: messages,
@@ -145,9 +145,7 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 	var renderer *glamour.TermRenderer
 	if !raw {
 		width := detectTerminalWidth()
-		if width < 20 {
-			width = 20
-		}
+		width = max(width-2, 20)
 
 		// Allow overriding the style; default to dark to avoid inverted code blocks
 		// in terminals where auto-detection is unreliable.

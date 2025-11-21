@@ -9,16 +9,17 @@ import (
 )
 
 const (
-	ConfigDir = "doman"
+	ConfigDir    = ".config"
+	AppConfigDir = "doman"
 )
 
 func GetConfigPath() (string, error) {
-	configBase, err := os.UserConfigDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get user config directory: %w", err)
 	}
 
-	configDir := filepath.Join(configBase, ConfigDir)
+	configDir := filepath.Join(homeDir, ConfigDir, AppConfigDir)
 	return configDir, nil
 }
 

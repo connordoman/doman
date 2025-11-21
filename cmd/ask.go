@@ -172,7 +172,9 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("prompt cannot be empty")
 	}
 
-	fmt.Println(txt.Boldf("%s", txt.Bluef("You:")), txt.Italicf("%s", prompt))
+	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+
+	fmt.Println(promptStyle.Render(txt.Boldf("%s", txt.Bluef("You:")), prompt))
 
 	apiKey, err := cmd.Flags().GetString("api-key")
 	if err != nil {
@@ -232,10 +234,6 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if verbose {
-			log.Printf("AI Response: %v", completion)
-		}
-
 		if response, err = pkg.CollectResponse(completion.Choices, raw); err != nil {
 			return err
 		}
@@ -262,8 +260,10 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	}
 
 	if response != "" {
+		responseStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+
 		fmt.Println()
-		fmt.Println(response)
+		fmt.Println(responseStyle.Render(response))
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
 		if shouldContinue {
 			idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
