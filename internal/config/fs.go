@@ -22,6 +22,14 @@ func GetConfigPath() (string, error) {
 	return configDir, nil
 }
 
+func ConfigPath(segments ...string) string {
+	configDir, err := GetConfigPath()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(configDir, filepath.Join(segments...))
+}
+
 func SaveConfig() error {
 	configDir, err := GetConfigPath()
 	if err != nil {

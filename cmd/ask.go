@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/data"
 	"github.com/connordoman/doman/internal/pkg"
@@ -53,9 +53,11 @@ var setupForm = huh.NewForm(
 ).WithTheme(base16Theme)
 
 var AskCommand = &cobra.Command{
-	Use:   "ask [prompt]",
-	Short: "Ask a question to the configured AI service",
-	RunE:  runAsk,
+	Use:               "ask [prompt]",
+	Short:             "Ask a question to the configured AI service",
+	RunE:              runAsk,
+	PersistentPreRunE: initAskDB,
+	PersistentPostRun: closeAskDB,
 }
 
 func init() {
@@ -67,6 +69,20 @@ func init() {
 	AskCommand.Flags().String("style", "", "Markdown render style: dark|light|auto (default: dark)")
 	AskCommand.Flags().BoolP("continue", "c", false, "Continue previous conversation")
 	AskCommand.Flags().String("id", "", "Specific conversation ID to continue (requires --continue)")
+
+	AskCommand.AddCommand(AskConvosCommand)
+}
+
+func initAskDB(cmd *cobra.Command, args []string) error {
+	dbPath := config.ConfigPath("ask.db")
+	if err := data.InitDB(dbPath); err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+	return nil
+}
+
+func closeAskDB(cmd *cobra.Command, args []string) {
+	data.CloseDB()
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
@@ -89,18 +105,6 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 	}
-
-	// Initialize database
-	configDir, err := config.GetConfigPath()
-	if err != nil {
-		return fmt.Errorf("failed to get config path: %w", err)
-	}
-
-	dbPath := filepath.Join(configDir, "ask.db")
-	if err := data.InitDB(dbPath); err != nil {
-		return fmt.Errorf("failed to initialize database: %w", err)
-	}
-	defer data.CloseDB()
 
 	// Handle --continue flag
 	shouldContinue, _ := cmd.Flags().GetBool("continue")
@@ -262,7 +266,8 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		fmt.Println(response)
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
 		if shouldContinue {
-			conversationInfo = txt.Greyf(" \u2022 Conversation: %s \u2022 Check important info for mistakes.", conversationID[:8])
+			idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
+			conversationInfo = fmt.Sprintf(" \u2022 %s \u2022 %s", idStyle.Render(conversationID[:8]), txt.Greyf("Check important info for mistakes."))
 		}
 		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), conversationInfo)
 	} else {
