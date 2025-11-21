@@ -85,15 +85,42 @@ var AskSplashText = []string{
 	"Finishing my bathroom break",
 }
 
-func PromptAi(model, apiKey, prompt string) (*openai.ChatCompletion, error) {
+// MessageHistory represents a message in conversation history
+type MessageHistory struct {
+	Role    string
+	Content string
+}
+
+// PromptAi sends a prompt to the AI service with optional conversation history
+func PromptAi(model, apiKey, prompt string, history []MessageHistory) (*openai.ChatCompletion, error) {
 	systemMessage := viper.GetString("ask.system_message")
 	client := openai.NewClient(option.WithAPIKey(apiKey))
+
+	messages := []openai.ChatCompletionMessageParamUnion{}
+
+	// Add system message if present
+	if systemMessage != "" {
+		messages = append(messages, openai.SystemMessage(systemMessage))
+	}
+
+	// Add conversation history
+	for _, msg := range history {
+		switch msg.Role {
+		case "system":
+			messages = append(messages, openai.SystemMessage(msg.Content))
+		case "user":
+			messages = append(messages, openai.UserMessage(msg.Content))
+		case "assistant":
+			messages = append(messages, openai.AssistantMessage(msg.Content))
+		}
+	}
+
+	// Add current user prompt
+	messages = append(messages, openai.UserMessage(prompt))
+
 	chatCompletion, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
-		Model: model,
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(systemMessage),
-			openai.UserMessage(prompt),
-		},
+		Model:    model,
+		Messages: messages,
 		// MaxCompletionTokens: openai.Int(2000), // Increased from 1000
 	})
 	if err != nil {
@@ -118,9 +145,7 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 	var renderer *glamour.TermRenderer
 	if !raw {
 		width := detectTerminalWidth()
-		if width < 20 {
-			width = 20
-		}
+		width = max(width-2, 20)
 
 		// Allow overriding the style; default to dark to avoid inverted code blocks
 		// in terminals where auto-detection is unreliable.
