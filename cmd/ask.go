@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/connordoman/doman/internal/config"
+	"github.com/connordoman/doman/internal/data"
 	"github.com/connordoman/doman/internal/pkg"
 	"github.com/connordoman/doman/internal/pkg/timer"
 	"github.com/connordoman/doman/internal/txt"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -62,6 +65,8 @@ func init() {
 	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
 	AskCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
 	AskCommand.Flags().String("style", "", "Markdown render style: dark|light|auto (default: dark)")
+	AskCommand.Flags().BoolP("continue", "c", false, "Continue previous conversation")
+	AskCommand.Flags().String("id", "", "Specific conversation ID to continue (requires --continue)")
 }
 
 func runAsk(cmd *cobra.Command, args []string) error {
@@ -82,6 +87,64 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to run setup: %w", err)
 		} else {
 			return nil
+		}
+	}
+
+	// Initialize database
+	configDir, err := config.GetConfigPath()
+	if err != nil {
+		return fmt.Errorf("failed to get config path: %w", err)
+	}
+
+	dbPath := filepath.Join(configDir, "ask.db")
+	if err := data.InitDB(dbPath); err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+	defer data.CloseDB()
+
+	// Handle --continue flag
+	shouldContinue, _ := cmd.Flags().GetBool("continue")
+	conversationID, _ := cmd.Flags().GetString("id")
+
+	var conversation *data.Conversation
+	var history []pkg.MessageHistory
+
+	if shouldContinue {
+		if conversationID == "" {
+			// Get the most recent conversation
+			conversations, err := data.ListConversations(1, 0)
+			if err != nil {
+				return fmt.Errorf("failed to list conversations: %w", err)
+			}
+			if len(conversations) == 0 {
+				return fmt.Errorf("no previous conversation found, start a new conversation first")
+			}
+			conversation = conversations[0]
+			conversationID = conversation.ID
+		} else {
+			// Get specific conversation
+			conv, err := data.GetConversation(conversationID)
+			if err != nil {
+				return fmt.Errorf("conversation not found: %w", err)
+			}
+			conversation = conv
+		}
+
+		// Load conversation history
+		messages, err := data.GetMessagesByConversationID(conversationID)
+		if err != nil {
+			return fmt.Errorf("failed to load conversation history: %w", err)
+		}
+
+		for _, msg := range messages {
+			history = append(history, pkg.MessageHistory{
+				Role:    msg.Role,
+				Content: msg.Content,
+			})
+		}
+
+		if verbose {
+			log.Printf("Continuing conversation %s with %d previous messages", conversationID, len(history))
 		}
 	}
 
@@ -123,9 +186,28 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get model flag: %w", err)
 	}
 	if model == "" {
-		model = viper.GetString("ask.openai.default_model")
-		if model == "" {
-			return fmt.Errorf("model is required, please set it using --model or configure it in the setup")
+		if conversation != nil {
+			model = conversation.Model
+		} else {
+			model = viper.GetString("ask.openai.default_model")
+			if model == "" {
+				return fmt.Errorf("model is required, please set it using --model or configure it in the setup")
+			}
+		}
+	}
+
+	// Create new conversation if not continuing
+	if !shouldContinue {
+		conversationID = uuid.New().String()
+		service := "openai" // Default service
+		_, err = data.CreateConversation(conversationID, model, service)
+		if err != nil {
+			return fmt.Errorf("failed to create conversation: %w", err)
+		}
+	} else {
+		// Update conversation timestamp
+		if err := data.UpdateConversationTimestamp(conversationID); err != nil {
+			return fmt.Errorf("failed to update conversation timestamp: %w", err)
 		}
 	}
 
@@ -141,7 +223,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	var response string
 	var pricing string
 	if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
-		completion, err := pkg.PromptAi(model, apiKey, prompt)
+		completion, err := pkg.PromptAi(model, apiKey, prompt, history)
 		if err != nil {
 			return err
 		}
@@ -165,10 +247,24 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 	timer.Stop()
 
+	// Store user message
+	if _, err := data.CreateMessage(conversationID, "user", prompt); err != nil {
+		return fmt.Errorf("failed to store user message: %w", err)
+	}
+
+	// Store assistant response
+	if _, err := data.CreateMessage(conversationID, "assistant", response); err != nil {
+		return fmt.Errorf("failed to store assistant message: %w", err)
+	}
+
 	if response != "" {
 		fmt.Println()
 		fmt.Println(response)
-		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), txt.Greyf("\u2022 Check important info for mistakes."))
+		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
+		if shouldContinue {
+			conversationInfo = txt.Greyf(" \u2022 Conversation: %s \u2022 Check important info for mistakes.", conversationID[:8])
+		}
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), conversationInfo)
 	} else {
 		fmt.Println(txt.Italicf("No response received"))
 	}
