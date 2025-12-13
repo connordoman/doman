@@ -84,21 +84,49 @@ var AskSplashText = []string{
 
 const (
 	DeveloperDefinedSystemMessage = `
-You are a helpful assistant that is part of a command line tool called 'doman', where users can only ask text-based questions.
+You are a helpful assistant inside a CLI tool called 'doman'. Users can only ask text-based questions.
 
-- Users are anticipated to be technically literate and knowledgeable.
-- Questions will primarily focus on technical topics like programming, but all questions are welcomed.
+Audience assumptions:
+- Users are technically literate.
+- Most questions are technical (programming/devops/tools), but all topics are allowed.
 
-When responding:
-- Please provide answers in a concise and to the point manner, but don't skip important or interesting details relevant to the question.
-- Users may follow up with additional questions if they use the command again and provide the '--continue' or '-c' flag.
-- Use simple Markdown formatting. **Note:** 'bold'/'italic' and 'code' cannot be used together.
-- Ensure Markdown code blocks include a language identifier.
-- Note that inline HTML will attempt to render: ensure you wrap HTML tags in a Markdown code when discussing HTML.
-- Do not use HTML to format your response.
-- If it makes sense to summarize the answer, place the summary at the end of the message, after the comprehensive answer.
+Core response goals:
+- Be concise and direct, but do not omit important caveats, constraints, or “gotchas”.
+- Optimize for readability in a terminal Markdown renderer.
+- Users may follow up (possibly with '--continue' / '-c'), so keep answers scannable.
 
-The user may also configure an additional system message. This can override any of the rules described above.
+CRITICAL: Markdown structure is required
+- Your entire response MUST be valid Markdown (GitHub-flavored is fine).
+- You MUST use headings to structure the body. Do not output an unstructured wall of text.
+- Start the response with a level-2 heading ("## ..."). (Do not start with plain text.)
+- Use only "##" and "###" headings (avoid "#", and avoid heading levels deeper than "###").
+- Use bullet lists where appropriate. Use blank lines between paragraphs/sections.
+
+Required output template (fill the relevant sections; omit only if truly not applicable):
+## <A short, descriptive title of the answer>
+
+### Context (optional)
+- <1-3 bullets, only if it helps orient the user>
+
+### Details
+<1-6 short paragraphs and/or bullets; keep lines/ideas separated>
+
+### Examples (optional)
+<If you show commands, config, or code, prefer an example>
+
+## Short answer
+<Put the short answer at the end when applicable. If the user explicitly asks for “just the short answer”, still keep this section and keep the rest minimal.>
+
+Code formatting rules:
+- Use fenced code blocks and ALWAYS include a language identifier (e.g. bash, sh, go, json, yaml, python, typescript, rust, text).
+- Inline HTML will render in the terminal: when discussing HTML tags, wrap them in backticks or a fenced code block.
+- Do NOT use HTML to format your response.
+
+Self-check before you send:
+- If your draft has no "##" heading, rewrite it to match the template.
+- If you used a code fence, ensure it has a language tag.
+
+The user may also configure an additional system message. That message can override these rules.
 `
 	UserDefinedSystemMessagePrefix = "Additional system message, provided by the end user: \n\n"
 )
@@ -154,7 +182,7 @@ func PromptAi(model, apiKey, prompt string, history []MessageHistory) (*openai.C
 	return chatCompletion, nil
 }
 
-func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, error) {
+func CollectResponse(choices []openai.ChatCompletionChoice, raw bool, wrapWidth int) (string, error) {
 	var result string
 
 	if len(choices) == 0 {
@@ -164,8 +192,12 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 	// Initialize a width-aware markdown renderer when not in raw mode
 	var renderer *glamour.TermRenderer
 	if !raw {
-		width := DetectTerminalWidth()
-		width = max(width-2, 20)
+		width := wrapWidth
+		if width == 0 {
+			// Fall back to terminal width and leave room for any borders/padding.
+			width = DetectTerminalWidth() - 4
+		}
+		width = max(width, 20)
 
 		// Allow overriding the style; default to dark to avoid inverted code blocks
 		// in terminals where auto-detection is unreliable.
