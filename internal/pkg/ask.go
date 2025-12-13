@@ -3,8 +3,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/glamour"
@@ -13,7 +11,6 @@ import (
 	openai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/spf13/viper"
-	"golang.org/x/term"
 )
 
 // Cost per million tokens
@@ -85,6 +82,27 @@ var AskSplashText = []string{
 	"Finishing my bathroom break",
 }
 
+const (
+	DeveloperDefinedSystemMessage = `
+You are a helpful assistant that is part of a command line tool called 'doman', where users can only ask text-based questions.
+
+- Users are anticipated to be technically literate and knowledgeable.
+- Questions will primarily focus on technical topics like programming, but all questions are welcomed.
+
+When responding:
+- Please provide answers in a concise and to the point manner, but don't skip important or interesting details relevant to the question.
+- Users may follow up with additional questions if they use the command again and provide the '--continue' or '-c' flag.
+- Use simple Markdown formatting. **Note:** 'bold'/'italic' and 'code' cannot be used together.
+- Ensure Markdown code blocks include a language identifier.
+- Note that inline HTML will attempt to render: ensure you wrap HTML tags in a Markdown code when discussing HTML.
+- Do not use HTML to format your response.
+- If it makes sense to summarize the answer, place the summary at the end of the message, after the comprehensive answer.
+
+The user may also configure an additional system message. This can override any of the rules described above.
+`
+	UserDefinedSystemMessagePrefix = "Additional system message, provided by the end user: \n\n"
+)
+
 // MessageHistory represents a message in conversation history
 type MessageHistory struct {
 	Role    string
@@ -93,14 +111,16 @@ type MessageHistory struct {
 
 // PromptAi sends a prompt to the AI service with optional conversation history
 func PromptAi(model, apiKey, prompt string, history []MessageHistory) (*openai.ChatCompletion, error) {
-	systemMessage := viper.GetString("ask.system_message")
+	userDefinedSystemMessage := viper.GetString("ask.system_message")
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	messages := []openai.ChatCompletionMessageParamUnion{}
 
+	messages = append(messages, openai.SystemMessage(DeveloperDefinedSystemMessage))
+
 	// Add system message if present
-	if systemMessage != "" {
-		messages = append(messages, openai.SystemMessage(systemMessage))
+	if userDefinedSystemMessage != "" {
+		messages = append(messages, openai.SystemMessage("Additional system message, provided by the end user: "+userDefinedSystemMessage))
 	}
 
 	// Add conversation history
@@ -144,7 +164,7 @@ func CollectResponse(choices []openai.ChatCompletionChoice, raw bool) (string, e
 	// Initialize a width-aware markdown renderer when not in raw mode
 	var renderer *glamour.TermRenderer
 	if !raw {
-		width := detectTerminalWidth()
+		width := DetectTerminalWidth()
 		width = max(width-2, 20)
 
 		// Allow overriding the style; default to dark to avoid inverted code blocks
@@ -227,31 +247,4 @@ func CalculateCost(model string, completion *openai.ChatCompletion) (float64, bo
 	totalCost += outputTokens * pricing.OutputCost
 
 	return totalCost / 1_000_000, true
-}
-
-// detectTerminalWidth returns the current terminal width in columns.
-// If width cannot be determined, it falls back to a sensible default of 80.
-func detectTerminalWidth() int {
-	// Respect COLUMNS if set and valid
-	if colsStr := os.Getenv("COLUMNS"); colsStr != "" {
-		if cols, err := strconv.Atoi(colsStr); err == nil && cols > 0 {
-			return cols
-		}
-	}
-
-	// Try stdout
-	if term.IsTerminal(int(os.Stdout.Fd())) {
-		if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
-			return w
-		}
-	}
-
-	// Try stderr
-	if term.IsTerminal(int(os.Stderr.Fd())) {
-		if w, _, err := term.GetSize(int(os.Stderr.Fd())); err == nil && w > 0 {
-			return w
-		}
-	}
-
-	return 80
 }

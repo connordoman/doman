@@ -172,7 +172,9 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("prompt cannot be empty")
 	}
 
-	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
+	width := pkg.DetectTerminalWidth()
+
+	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width-2).Padding(0, 1)
 
 	fmt.Println(promptStyle.Render(txt.Boldf("%s", txt.Bluef("You:")), prompt))
 
@@ -262,7 +264,6 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if response != "" {
 		responseStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1)
 
-		fmt.Println()
 		fmt.Println(responseStyle.Render(response))
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
 		if shouldContinue {
