@@ -3,5 +3,12 @@ package pkg
 import "github.com/connordoman/doman/internal/config"
 
 func VersionString() string {
-	return "doman " + config.Version + " (#" + config.CommitHash[:7] + ") " + config.Build + " " + config.BuildDate
+	commit := config.CommitHash
+	if commit == "" || commit == "unknown" {
+		commit = "unknown"
+	} else if len(commit) > 7 {
+		commit = commit[:7]
+	}
+
+	return "doman " + config.Version + " (#" + commit + ") " + config.Build + " " + config.BuildDate
 }
