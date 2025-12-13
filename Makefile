@@ -9,7 +9,7 @@ CONFIG_PATH := internal/config
 DEFAULT_VERSION := 0.0.0
 DEFAULT_BUILD := dev
 
-VERSION := v$(shell if [ -f VERSION ]; then cat VERSION; else echo $(DEFAULT_VERSION); fi)
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v$(DEFAULT_VERSION))
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 BUILD ?= $(DEFAULT_BUILD)
