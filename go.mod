@@ -7,15 +7,12 @@ require (
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/fatih/color v1.18.0
+	github.com/google/uuid v1.6.0
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/openai/openai-go v1.5.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	golang.design/x/clipboard v0.7.1
-)
-
-require (
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 )
 
 require (
@@ -53,7 +50,7 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/rivo/uniseg v0.4.7
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
@@ -75,7 +72,7 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
+	golang.org/x/term v0.31.0
 	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
