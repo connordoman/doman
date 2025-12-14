@@ -16,12 +16,30 @@ before:
     - go generate ./...
 
 builds:
-  - env:
-      - CGO_ENABLED=0
+  # Linux and macOS with CGO (default toolchains)
+  - id: doman-unix
+    env:
+      - CGO_ENABLED=1
     goos:
       - linux
-      - windows
       - darwin
+    ldflags:
+      - -s -w
+      - -X github.com/connordoman/doman/internal/config.Version={{.Version}}
+      - -X github.com/connordoman/doman/internal/config.CommitHash={{.Commit}}
+      - -X github.com/connordoman/doman/internal/config.BuildDate={{.Date}}
+      - -X github.com/connordoman/doman/internal/config.Build=release
+
+  # Windows (amd64 only) with CGO; uses mingw-w64 cross toolchain
+  - id: doman-windows-amd64
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    goos:
+      - windows
+    goarch:
+      - amd64
     ldflags:
       - -s -w
       - -X github.com/connordoman/doman/internal/config.Version={{.Version}}
