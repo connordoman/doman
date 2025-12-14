@@ -35,7 +35,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --id doman-linux --id doman-windows-amd64
+          args: release --clean --config .goreleaser.yaml --config .goreleaser.linux-windows.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -57,6 +57,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --id doman-darwin
+          args: release --clean --config .goreleaser.yaml --config .goreleaser.darwin.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
