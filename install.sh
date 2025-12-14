@@ -53,7 +53,7 @@ DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${FILE_NA
 
 # Check if already installed
 if command -v doman >/dev/null 2>&1; then
-  CURRENT_VERSION=$(doman --version 2>/dev/null || echo "unknown")
+  CURRENT_VERSION=$(doman version | awk '{print $2}')
   echo "doman is already installed (version: $CURRENT_VERSION)"
   echo "Installing version v${VERSION}..."
 else
@@ -117,6 +117,24 @@ else
   echo "You may need to add $INSTALL_DIR to your PATH" >&2
   if [ "$INSTALL_DIR" = "$HOME/go/bin" ]; then
     echo "Run: export PATH=\"\$PATH:\$HOME/go/bin\"" >&2
+    
+    $profile_path = $HOME/.profile
+    if [ "$SHELL" = "/bin/zsh" ]; then
+      $profile_path = $HOME/.zshrc
+    elif [ "$SHELL" = "/bin/bash" ]; then
+      $profile_path = $HOME/.bashrc
+    elif [ "$SHELL" = "/bin/fish" ]; then
+      $profile_path = $HOME/.config/fish/config.fish
+    else
+      echo "Warning: could not determine profile path for shell: $SHELL" >&2
+      echo "Please edit your profile manually to add $INSTALL_DIR to your PATH" >&2
+      echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >&2
+      return
+    fi
+
+    echo "Edit $profile_path to add $INSTALL_DIR to your PATH:" >&2
+    echo "# doman installation path" >&2
+    echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >&2
   fi
   "$INSTALL_DIR/doman" version
 fi
