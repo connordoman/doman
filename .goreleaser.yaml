@@ -16,12 +16,27 @@ before:
     - go generate ./...
 
 builds:
-  # Linux and macOS (amd64/arm64) with CGO
-  - id: doman-unix
+  # Linux CGO build (amd64, arm64)
+  - id: doman-linux
     env:
       - CGO_ENABLED=1
     goos:
       - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/connordoman/doman/internal/config.Version={{.Version}}
+      - -X github.com/connordoman/doman/internal/config.CommitHash={{.Commit}}
+      - -X github.com/connordoman/doman/internal/config.BuildDate={{.Date}}
+      - -X github.com/connordoman/doman/internal/config.Build=release
+
+  # macOS CGO build (amd64, arm64) — must run on macOS
+  - id: doman-darwin
+    env:
+      - CGO_ENABLED=1
+    goos:
       - darwin
     goarch:
       - amd64
@@ -33,7 +48,7 @@ builds:
       - -X github.com/connordoman/doman/internal/config.BuildDate={{.Date}}
       - -X github.com/connordoman/doman/internal/config.Build=release
 
-  # Windows (amd64) with CGO using mingw-w64
+  # Windows (amd64) CGO build using mingw-w64
   - id: doman-windows-amd64
     env:
       - CGO_ENABLED=1
