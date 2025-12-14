@@ -116,6 +116,30 @@ func GetConversation(id string) (*Conversation, error) {
 	return &conv, nil
 }
 
+// FindConversationByPrefix finds a conversation by ID prefix.
+// Returns an error if no matches or if the prefix is ambiguous.
+func FindConversationByPrefix(prefix string) (*Conversation, error) {
+	if queries == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	ctx := context.Background()
+	results, err := queries.FindConversationsByPrefix(ctx, prefix+"%")
+	if err != nil {
+		return nil, fmt.Errorf("failed to find conversation by prefix: %w", err)
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("conversation not found for prefix: %s", prefix)
+	}
+
+	if len(results) > 1 {
+		return nil, fmt.Errorf("conversation prefix is ambiguous (%d matches): %s", len(results), prefix)
+	}
+
+	return &results[0], nil
+}
+
 // UpdateConversationTimestamp updates the updated_at timestamp
 func UpdateConversationTimestamp(id string) error {
 	if queries == nil {

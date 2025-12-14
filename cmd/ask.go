@@ -126,10 +126,19 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			conversation = conversations[0]
 			conversationID = conversation.ID
 		} else {
-			// Get specific conversation
+			// Get specific conversation (supports prefix)
 			conv, err := data.GetConversation(conversationID)
 			if err != nil {
-				return fmt.Errorf("conversation not found: %w", err)
+				if verbose {
+					log.Printf("conversation %s not found by exact id: %v", conversationID, err)
+					log.Printf("attempting prefix lookup for %s", conversationID)
+				}
+
+				conv, err = data.FindConversationByPrefix(conversationID)
+				if err != nil {
+					return fmt.Errorf("conversation not found: %w", err)
+				}
+				conversationID = conv.ID
 			}
 			conversation = conv
 		}

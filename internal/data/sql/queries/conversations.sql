@@ -7,6 +7,12 @@ RETURNING *;
 SELECT * FROM conversations
 WHERE id = ? LIMIT 1;
 
+-- name: FindConversationsByPrefix :many
+SELECT *
+FROM conversations
+WHERE id LIKE ?
+ORDER BY updated_at DESC;
+
 -- name: UpdateConversationTimestamp :exec
 UPDATE conversations
 SET updated_at = CURRENT_TIMESTAMP

@@ -76,6 +76,43 @@ func (q *Queries) DeleteConversation(ctx context.Context, id string) error {
 	return err
 }
 
+const findConversationsByPrefix = `-- name: FindConversationsByPrefix :many
+SELECT id, created_at, updated_at, title, model, service
+FROM conversations
+WHERE id LIKE ?
+ORDER BY updated_at DESC
+`
+
+func (q *Queries) FindConversationsByPrefix(ctx context.Context, id string) ([]Conversation, error) {
+	rows, err := q.db.QueryContext(ctx, findConversationsByPrefix, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Conversation
+	for rows.Next() {
+		var i Conversation
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Model,
+			&i.Service,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getConversation = `-- name: GetConversation :one
 SELECT id, created_at, updated_at, title, model, service FROM conversations
 WHERE id = ? LIMIT 1
