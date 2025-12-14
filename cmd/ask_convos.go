@@ -21,7 +21,16 @@ func runAskConvos(cmd *cobra.Command, args []string) error {
 	}
 	for _, convo := range convos {
 		createdAt := convo.CreatedAt.Local().Format("Jan 02, 2006 15:04:05 MST")
-		fmt.Println(txt.Greyf("%s", createdAt), txt.Bluef("%s", convo.ID))
+		title := convo.Title
+		if title == "" {
+			title = "(untitled)"
+		}
+		shortID := convo.ID
+		if len(shortID) > 8 {
+			shortID = shortID[:8]
+		}
+
+		fmt.Println(txt.Greyf("%s", createdAt), txt.Bluef("%s", shortID), txt.Boldf("%s", title))
 	}
 	return nil
 }

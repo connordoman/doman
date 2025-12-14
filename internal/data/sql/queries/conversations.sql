@@ -1,6 +1,6 @@
 -- name: CreateConversation :one
-INSERT INTO conversations (id, model, service)
-VALUES (?, ?, ?)
+INSERT INTO conversations (id, title, model, service)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetConversation :one

@@ -10,24 +10,31 @@ import (
 )
 
 const createConversation = `-- name: CreateConversation :one
-INSERT INTO conversations (id, model, service)
-VALUES (?, ?, ?)
-RETURNING id, created_at, updated_at, model, service
+INSERT INTO conversations (id, title, model, service)
+VALUES (?, ?, ?, ?)
+RETURNING id, created_at, updated_at, title, model, service
 `
 
 type CreateConversationParams struct {
 	ID      string `json:"id"`
+	Title   string `json:"title"`
 	Model   string `json:"model"`
 	Service string `json:"service"`
 }
 
 func (q *Queries) CreateConversation(ctx context.Context, arg CreateConversationParams) (Conversation, error) {
-	row := q.db.QueryRowContext(ctx, createConversation, arg.ID, arg.Model, arg.Service)
+	row := q.db.QueryRowContext(ctx, createConversation,
+		arg.ID,
+		arg.Title,
+		arg.Model,
+		arg.Service,
+	)
 	var i Conversation
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Title,
 		&i.Model,
 		&i.Service,
 	)
@@ -70,7 +77,7 @@ func (q *Queries) DeleteConversation(ctx context.Context, id string) error {
 }
 
 const getConversation = `-- name: GetConversation :one
-SELECT id, created_at, updated_at, model, service FROM conversations
+SELECT id, created_at, updated_at, title, model, service FROM conversations
 WHERE id = ? LIMIT 1
 `
 
@@ -81,6 +88,7 @@ func (q *Queries) GetConversation(ctx context.Context, id string) (Conversation,
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Title,
 		&i.Model,
 		&i.Service,
 	)
@@ -123,7 +131,7 @@ func (q *Queries) GetMessagesByConversationId(ctx context.Context, conversationI
 }
 
 const listConversations = `-- name: ListConversations :many
-SELECT id, created_at, updated_at, model, service FROM conversations
+SELECT id, created_at, updated_at, title, model, service FROM conversations
 ORDER BY updated_at DESC
 LIMIT ? OFFSET ?
 `
@@ -146,6 +154,7 @@ func (q *Queries) ListConversations(ctx context.Context, arg ListConversationsPa
 			&i.ID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Title,
 			&i.Model,
 			&i.Service,
 		); err != nil {
