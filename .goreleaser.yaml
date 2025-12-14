@@ -16,48 +16,12 @@ before:
     - go generate ./...
 
 builds:
-  # Linux CGO build (amd64, arm64)
-  - id: doman-linux
-    env:
-      - CGO_ENABLED=1
+  - env:
+      - CGO_ENABLED=0
     goos:
       - linux
-    goarch:
-      - amd64
-      - arm64
-    ldflags:
-      - -s -w
-      - -X github.com/connordoman/doman/internal/config.Version={{.Version}}
-      - -X github.com/connordoman/doman/internal/config.CommitHash={{.Commit}}
-      - -X github.com/connordoman/doman/internal/config.BuildDate={{.Date}}
-      - -X github.com/connordoman/doman/internal/config.Build=release
-
-  # macOS CGO build (amd64, arm64) — must run on macOS
-  - id: doman-darwin
-    env:
-      - CGO_ENABLED=1
-    goos:
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    ldflags:
-      - -s -w
-      - -X github.com/connordoman/doman/internal/config.Version={{.Version}}
-      - -X github.com/connordoman/doman/internal/config.CommitHash={{.Commit}}
-      - -X github.com/connordoman/doman/internal/config.BuildDate={{.Date}}
-      - -X github.com/connordoman/doman/internal/config.Build=release
-
-  # Windows (amd64) CGO build using mingw-w64
-  - id: doman-windows-amd64
-    env:
-      - CGO_ENABLED=1
-      - CC=x86_64-w64-mingw32-gcc
-      - CXX=x86_64-w64-mingw32-g++
-    goos:
       - windows
-    goarch:
-      - amd64
+      - darwin
     ldflags:
       - -s -w
       - -X github.com/connordoman/doman/internal/config.Version={{.Version}}

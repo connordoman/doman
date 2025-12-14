@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/connordoman/doman/internal/data/db"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 //go:embed sql/schema/*.sql
@@ -35,7 +35,7 @@ func InitDB(dbPath string) error {
 	}
 
 	var err error
-	database, err = sql.Open("sqlite3", dbPath+"?_foreign_keys=1")
+	database, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}

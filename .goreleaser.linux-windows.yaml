@@ -1,6 +1,0 @@
-version: 2
-
-# Restrict builds to linux + windows only (reuse definitions from main config).
-builds:
-  - id: doman-linux
-  - id: doman-windows-amd64

@@ -1,5 +1,0 @@
-version: 2
-
-# Restrict builds to macOS only (reuse definitions from main config).
-builds:
-  - id: doman-darwin

@@ -27,52 +27,18 @@ jobs:
         with:
           go-version: "1.24"
 
-      - name: Install mingw-w64 for Windows CGO builds
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64
-
-      - name: Run GoReleaser (linux + windows)
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
-          args: release --snapshot --clean --config .goreleaser.yaml --config .goreleaser.linux-windows.yaml
+          args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts (linux + windows)
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-linux-windows
-          path: dist/*
-          retention-days: 7
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-
-      - name: Run GoReleaser (macOS)
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --snapshot --clean --config .goreleaser.yaml --config .goreleaser.darwin.yaml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload artifacts (macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-macos
+          name: dist
           path: dist/*
           retention-days: 7
