@@ -126,10 +126,19 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			conversation = conversations[0]
 			conversationID = conversation.ID
 		} else {
-			// Get specific conversation
+			// Get specific conversation (supports prefix)
 			conv, err := data.GetConversation(conversationID)
 			if err != nil {
-				return fmt.Errorf("conversation not found: %w", err)
+				if verbose {
+					log.Printf("conversation %s not found by exact id: %v", conversationID, err)
+					log.Printf("attempting prefix lookup for %s", conversationID)
+				}
+
+				conv, err = data.FindConversationByPrefix(conversationID)
+				if err != nil {
+					return fmt.Errorf("conversation not found: %w", err)
+				}
+				conversationID = conv.ID
 			}
 			conversation = conv
 		}
@@ -157,8 +166,17 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		prompt = strings.TrimSpace(strings.Join(args, " "))
 	} else {
+		inputTitle := "Enter your question"
+		if shouldContinue {
+			title := conversation.Title
+			if !pkg.IsMeaningfulTitle(title) {
+				title = conversation.ID
+			}
+			inputTitle = fmt.Sprintf(`Follow up on "%s"`, title)
+		}
+
 		err := huh.NewInput().
-			Title("Enter your question").
+			Title(inputTitle).
 			Value(&prompt).
 			Run()
 		if err != nil {
@@ -166,8 +184,8 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 
 		prompt = strings.TrimSpace(prompt)
-
 	}
+
 	if prompt == "" {
 		return fmt.Errorf("prompt cannot be empty")
 	}
@@ -208,7 +226,40 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if !shouldContinue {
 		conversationID = uuid.New().String()
 		service := "openai" // Default service
-		_, err = data.CreateConversation(conversationID, model, service)
+		titleModel := viper.GetString("ask.title_model")
+		if titleModel == "" {
+			titleModel = "gpt-5-nano"
+		}
+
+		title := pkg.FallbackTitleFromPrompt(prompt)
+		if generatedTitle, err := pkg.GenerateShortTitle(cmd.Context(), apiKey, titleModel, prompt); err != nil {
+			if verbose {
+				log.Printf("failed to generate short title with %s: %v", titleModel, err)
+			}
+
+			if titleModel != model {
+				if verbose {
+					log.Printf("retrying title generation with conversation model %s", model)
+				}
+				if altTitle, altErr := pkg.GenerateShortTitle(cmd.Context(), apiKey, model, prompt); altErr != nil {
+					if verbose {
+						log.Printf("fallback title generation failed: %v", altErr)
+					}
+				} else if pkg.IsMeaningfulTitle(altTitle) {
+					title = altTitle
+				}
+			}
+		} else if pkg.IsMeaningfulTitle(generatedTitle) {
+			title = generatedTitle
+		} else if verbose {
+			log.Printf("generated title was empty or invalid; using fallback")
+		}
+
+		if verbose {
+			log.Printf("conversation title: %q (model=%s)", title, titleModel)
+		}
+
+		_, err = data.CreateConversation(conversationID, title, model, service)
 		if err != nil {
 			return fmt.Errorf("failed to create conversation: %w", err)
 		}

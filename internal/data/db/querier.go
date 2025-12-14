@@ -12,6 +12,7 @@ type Querier interface {
 	CreateConversation(ctx context.Context, arg CreateConversationParams) (Conversation, error)
 	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
 	DeleteConversation(ctx context.Context, id string) error
+	FindConversationsByPrefix(ctx context.Context, id string) ([]Conversation, error)
 	GetConversation(ctx context.Context, id string) (Conversation, error)
 	GetMessagesByConversationId(ctx context.Context, conversationID string) ([]Message, error)
 	ListConversations(ctx context.Context, arg ListConversationsParams) ([]Conversation, error)

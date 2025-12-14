@@ -1,11 +1,17 @@
 -- name: CreateConversation :one
-INSERT INTO conversations (id, model, service)
-VALUES (?, ?, ?)
+INSERT INTO conversations (id, title, model, service)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetConversation :one
 SELECT * FROM conversations
 WHERE id = ? LIMIT 1;
+
+-- name: FindConversationsByPrefix :many
+SELECT *
+FROM conversations
+WHERE id LIKE ?
+ORDER BY updated_at DESC;
 
 -- name: UpdateConversationTimestamp :exec
 UPDATE conversations

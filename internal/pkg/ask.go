@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/connordoman/doman/internal/txt"
 	openai "github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/spf13/viper"
@@ -130,6 +131,13 @@ The user may also configure an additional system message. That message can overr
 `
 	UserDefinedSystemMessagePrefix = "Additional system message, provided by the end user: \n\n"
 )
+
+const (
+	maxConversationTitleLength = 80
+)
+
+// Minimum length (in runes) to treat a generated title as meaningful.
+const minMeaningfulTitleRunes = 3
 
 // MessageHistory represents a message in conversation history
 type MessageHistory struct {
@@ -279,4 +287,72 @@ func CalculateCost(model string, completion *openai.ChatCompletion) (float64, bo
 	totalCost += outputTokens * pricing.OutputCost
 
 	return totalCost / 1_000_000, true
+}
+
+func GenerateShortTitle(ctx context.Context, apiKey, model, prompt string) (string, error) {
+	client := openai.NewClient(option.WithAPIKey(apiKey))
+
+	messages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage("You write short, 3-8 word titles for user prompts. Respond with a concise title only, no quotes or markdown. Keep it under 80 characters."),
+		openai.UserMessage(prompt),
+	}
+
+	completion, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Model:       model,
+		Messages:    messages,
+		Temperature: openai.Float(1),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to generate short title: %w", err)
+	}
+
+	if len(completion.Choices) == 0 {
+		return "", fmt.Errorf("no title choices returned")
+	}
+
+	title := strings.TrimSpace(completion.Choices[0].Message.Content)
+	title = strings.Trim(title, "\"'“”")
+	title = strings.ReplaceAll(title, "\n", " ")
+	title = strings.Join(strings.Fields(title), " ")
+
+	return truncateTitle(title, maxConversationTitleLength), nil
+}
+
+func FallbackTitleFromPrompt(prompt string) string {
+	clean := strings.TrimSpace(prompt)
+	if clean == "" {
+		return "Untitled conversation"
+	}
+
+	firstLine := strings.SplitN(clean, "\n", 2)[0]
+	return truncateTitle(firstLine, maxConversationTitleLength)
+}
+
+// IsMeaningfulTitle returns true when a title has non-empty, trimmed content.
+func IsMeaningfulTitle(title string) bool {
+	if strings.TrimSpace(title) == "" {
+		return false
+	}
+
+	return len([]rune(strings.TrimSpace(title))) >= minMeaningfulTitleRunes
+}
+
+func truncateTitle(title string, maxLen int) string {
+	title = strings.TrimSpace(title)
+	if maxLen <= 0 {
+		return title
+	}
+
+	runes := []rune(title)
+	if len(runes) <= maxLen {
+		return title
+	}
+
+	return string(runes[:maxLen])
+}
+
+func FormatPrompt(prompt string) string {
+	terminalWidth := DetectTerminalWidth()
+	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1).Width(terminalWidth - 2)
+	return promptStyle.Render(txt.Boldf("%s", txt.Bluef("You:")), prompt)
 }
