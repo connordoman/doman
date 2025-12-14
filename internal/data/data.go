@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -45,23 +46,12 @@ func InitDB(dbPath string) error {
 		return fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
-	// Read and execute schema files
-	schemaFiles, err := schemaFS.ReadDir("sql/schema")
-	if err != nil {
-		return fmt.Errorf("failed to read schema directory: %w", err)
+	if err := applySchema(database); err != nil {
+		return err
 	}
 
-	for _, file := range schemaFiles {
-		if filepath.Ext(file.Name()) == ".sql" {
-			schemaSQL, err := schemaFS.ReadFile(fmt.Sprintf("sql/schema/%s", file.Name()))
-			if err != nil {
-				return fmt.Errorf("failed to read schema file %s: %w", file.Name(), err)
-			}
-
-			if _, err := database.Exec(string(schemaSQL)); err != nil {
-				return fmt.Errorf("failed to execute schema file %s: %w", file.Name(), err)
-			}
-		}
+	if err := runMigrations(database); err != nil {
+		return err
 	}
 
 	// Initialize queries
@@ -89,7 +79,7 @@ func CloseDB() error {
 }
 
 // CreateConversation creates a new conversation
-func CreateConversation(id, model, service string) (*Conversation, error) {
+func CreateConversation(id, title, model, service string) (*Conversation, error) {
 	if queries == nil {
 		return nil, fmt.Errorf("database not initialized")
 	}
@@ -97,6 +87,7 @@ func CreateConversation(id, model, service string) (*Conversation, error) {
 	ctx := context.Background()
 	conv, err := queries.CreateConversation(ctx, db.CreateConversationParams{
 		ID:      id,
+		Title:   title,
 		Model:   model,
 		Service: service,
 	})
@@ -123,6 +114,30 @@ func GetConversation(id string) (*Conversation, error) {
 	}
 
 	return &conv, nil
+}
+
+// FindConversationByPrefix finds a conversation by ID prefix.
+// Returns an error if no matches or if the prefix is ambiguous.
+func FindConversationByPrefix(prefix string) (*Conversation, error) {
+	if queries == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+
+	ctx := context.Background()
+	results, err := queries.FindConversationsByPrefix(ctx, prefix+"%")
+	if err != nil {
+		return nil, fmt.Errorf("failed to find conversation by prefix: %w", err)
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("conversation not found for prefix: %s", prefix)
+	}
+
+	if len(results) > 1 {
+		return nil, fmt.Errorf("conversation prefix is ambiguous (%d matches): %s", len(results), prefix)
+	}
+
+	return &results[0], nil
 }
 
 // UpdateConversationTimestamp updates the updated_at timestamp
@@ -201,4 +216,76 @@ func ListConversations(limit, offset int) ([]*Conversation, error) {
 	}
 
 	return result, nil
+}
+
+func applySchema(db *sql.DB) error {
+	schemaFiles, err := schemaFS.ReadDir("sql/schema")
+	if err != nil {
+		return fmt.Errorf("failed to read schema directory: %w", err)
+	}
+
+	for _, file := range schemaFiles {
+		if filepath.Ext(file.Name()) == ".sql" {
+			schemaSQL, err := schemaFS.ReadFile(fmt.Sprintf("sql/schema/%s", file.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to read schema file %s: %w", file.Name(), err)
+			}
+
+			if _, err := db.Exec(string(schemaSQL)); err != nil {
+				return fmt.Errorf("failed to execute schema file %s: %w", file.Name(), err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func runMigrations(db *sql.DB) error {
+	if err := ensureConversationTitleColumn(db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ensureConversationTitleColumn(db *sql.DB) error {
+	rows, err := db.Query(`PRAGMA table_info(conversations);`)
+	if err != nil {
+		return fmt.Errorf("failed to inspect conversations schema: %w", err)
+	}
+	defer rows.Close()
+
+	hasTitle := false
+	for rows.Next() {
+		var (
+			cid       int
+			name      string
+			ctype     string
+			notnull   int
+			dfltValue sql.NullString
+			pk        int
+		)
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dfltValue, &pk); err != nil {
+			return fmt.Errorf("failed to scan schema row: %w", err)
+		}
+
+		if name == "title" {
+			hasTitle = true
+			break
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to iterate schema rows: %w", err)
+	}
+
+	if hasTitle {
+		return nil
+	}
+
+	if _, err := db.Exec(`ALTER TABLE conversations ADD COLUMN title TEXT NOT NULL DEFAULT ''`); err != nil {
+		return fmt.Errorf("failed to add title column to conversations: %w", err)
+	}
+	log.Println("Database updated: added conversations.title column")
+
+	return nil
 }
