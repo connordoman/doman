@@ -118,18 +118,18 @@ else
   if [ "$INSTALL_DIR" = "$HOME/go/bin" ]; then
     echo "Run: export PATH=\"\$PATH:\$HOME/go/bin\"" >&2
     
-    $profile_path = $HOME/.profile
-    if [ "$SHELL" = "/bin/zsh" ]; then
-      $profile_path = $HOME/.zshrc
-    elif [ "$SHELL" = "/bin/bash" ]; then
-      $profile_path = $HOME/.bashrc
-    elif [ "$SHELL" = "/bin/fish" ]; then
-      $profile_path = $HOME/.config/fish/config.fish
+    profile_path="$HOME/.profile"
+    if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
+      profile_path="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ] || [ "$(basename "$SHELL")" = "bash" ]; then
+      profile_path="$HOME/.bashrc"
+    elif [ "$(basename "$SHELL")" = "fish" ]; then
+      profile_path="$HOME/.config/fish/config.fish"
     else
       echo "Warning: could not determine profile path for shell: $SHELL" >&2
       echo "Please edit your profile manually to add $INSTALL_DIR to your PATH" >&2
       echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >&2
-      return
+      return 0
     fi
 
     echo "Edit $profile_path to add $INSTALL_DIR to your PATH:" >&2
