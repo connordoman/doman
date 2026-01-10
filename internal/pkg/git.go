@@ -225,19 +225,22 @@ func (p GitHubPRSimple) String() string {
 
 func (p GitHubPRSimple) ColorizedString() string {
 	var style lipgloss.Style
+	var titleStyle = lipgloss.NewStyle()
 	switch p.State {
 	case GitHubPRStateOpen:
 		style = openPRStyle
 	case GitHubPRStateClosed:
 		style = closedPRStyle
+		titleStyle = titleStyle.Strikethrough(true)
 	case GitHubPRStateMerged:
 		style = mergedPRStyle
 	}
 
 	number := style.Render(fmt.Sprintf("#%d", p.Number))
 	base := RenderGitBranch(p.Base)
+	title := titleStyle.Render(p.Title)
 
-	return fmt.Sprintf("%s %s %s %s", number, p.Title, txt.Greyf("→"), base)
+	return fmt.Sprintf("%s %s %s %s", number, title, txt.Greyf("→"), base)
 }
 
 func GetPRListForBranch(branch string) ([]GitHubPRSimple, error) {
