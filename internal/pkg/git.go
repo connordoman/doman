@@ -264,3 +264,8 @@ func RenderGitBranch(branch string) string {
 func RenderGitCommit(commit string) string {
 	return gitCommitStyle.Render(" " + commit + " ")
 }
+
+func CheckIsGitRepo() bool {
+	_, err := RunCommand("git", "rev-parse", "--is-inside-work-tree")
+	return err == nil
+}

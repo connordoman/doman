@@ -22,6 +22,10 @@ func init() {
 }
 
 func runBranchStatsCommand(cmd *cobra.Command, args []string) error {
+	if !pkg.CheckIsGitRepo() {
+		return fmt.Errorf("not a git repository")
+	}
+
 	branch := ""
 	if len(args) > 0 {
 		branch = args[0]
@@ -48,25 +52,22 @@ func runBranchStatsCommand(cmd *cobra.Command, args []string) error {
 	fmt.Println(txt.Greyf("Last Commit:"), branchTimestamp.Format("Jan 02, 2006 15:04:05 MST"))
 
 	var prs []pkg.GitHubPRSimple
+	var prListErr error
 
 	if pkg.CheckGitHubCLIInstalled() {
-		if spinner.New().Title("Checking for PRs").Style(lipgloss.NewStyle().Foreground(lipgloss.Color("#2563eb"))).ActionWithErr(func(ctx context.Context) error {
+		prListErr = spinner.New().Title("Checking for PRs").Style(lipgloss.NewStyle().Foreground(lipgloss.Color("#2563eb"))).ActionWithErr(func(ctx context.Context) error {
 			prs, err = pkg.GetPRListForBranch(branch)
 			return err
-		}).Run(); err != nil {
-			return fmt.Errorf("failed to get PR list for branch: %w", err)
-		}
+		}).Run()
 	}
 
-	if err != nil {
+	if prListErr != nil {
 		if pkg.IsGitHubCLIUnavailableError(err) {
-			fmt.Println("GitHub CLI is not installed")
+			fmt.Println(txt.Warningf("`gh` is not available, install it to see a list of PRs"))
 		} else {
 			return fmt.Errorf("failed to get PR list for branch: %w", err)
 		}
-	}
-
-	if len(prs) > 0 {
+	} else if len(prs) > 0 {
 		fmt.Println(txt.Greyf("PRs:"))
 		for _, pr := range prs {
 			fmt.Println("  -", pr.ColorizedString())

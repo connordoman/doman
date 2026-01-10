@@ -15,6 +15,10 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("#ef4444"))
 
+	warningStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#f59e0b"))
+
 	boldStyle = lipgloss.NewStyle().
 			Bold(true)
 
@@ -43,6 +47,10 @@ func Successf(format string, args ...any) string {
 
 func Errorf(format string, args ...any) string {
 	return errorStyle.Render(fmt.Sprintf(format, args...))
+}
+
+func Warningf(format string, args ...any) string {
+	return warningStyle.Render(fmt.Sprintf(format, args...))
 }
 
 // ----- Gradient color interpolation utilities -----
