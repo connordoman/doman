@@ -13,10 +13,15 @@ var GitCommand = &cobra.Command{
 }
 
 func init() {
-	GitCommand.AddCommand(git.AuthorCommand)
-	GitCommand.AddCommand(git.RemotesCommand)
+	GitCommand.AddCommand(
+		git.AuthorCommand,
+		git.RemotesCommand,
+		git.BranchStatsCommand,
+	)
+
 }
 
 func runGitCommand(cmd *cobra.Command, args []string) error {
+	cmd.Help()
 	return nil
 }

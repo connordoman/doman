@@ -37,7 +37,11 @@ var (
 
 func runCommandHelper(withOutput, printCommand bool, command string, args ...string) (string, error) {
 	if printCommand {
-		cmdString := fmt.Sprintf("$ %s %s", command, strings.Join(args, " "))
+		escapedArgs := make([]string, len(args))
+		for i, arg := range args {
+			escapedArgs[i] = strings.ReplaceAll(arg, "%", "%%")
+		}
+		cmdString := fmt.Sprintf("$ %s %s", command, strings.Join(escapedArgs, " "))
 		log.Println(Bold(Gray(cmdString)))
 	}
 
