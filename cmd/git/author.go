@@ -51,13 +51,18 @@ func executeAuthor(cmd *cobra.Command, args []string) {
 		log.Fatalf("Error getting user.email: %v", err)
 	}
 
+	fmt.Printf("%s %s\n", txt.Boldf("%s", strings.TrimSpace(userName)), txt.Greyf("%s", strings.TrimSpace(email)))
+
 	ghCLIInstalled := pkg.CheckGitHubCLIInstalled()
 	ghUser := ""
 	if ghCLIInstalled {
 		ghUser, err = pkg.GetGitHubCLIUser()
 		if err != nil {
-			pkg.PrintError("Error getting GitHub CLI user: %v", err)
+			pkg.PrintInfo("could not get gh user (are you logged in?)")
+			return
 		}
+	} else {
+		return
 	}
 
 	if jsonFlag {
@@ -77,8 +82,6 @@ func executeAuthor(cmd *cobra.Command, args []string) {
 		fmt.Println(string(jsonOutput))
 		return
 	}
-
-	fmt.Printf("%s %s\n", txt.Boldf("%s", strings.TrimSpace(userName)), txt.Greyf("%s", strings.TrimSpace(email)))
 
 	ghUserStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#6b7280"))
 
