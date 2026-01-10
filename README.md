@@ -42,3 +42,5 @@ These are the commands I use most often:
 1. `ask` – Get a question answered by AI (requires your own OpenAI API key)
 2. `ip` – Display your public and private IP address.
 3. `git author` – Display the name & email of the current Git user.
+
+_This branch exists solely to see what different kinds of PRs look like in `doman git branch-stats`_
