@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/data"
 	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/pkg/ask"
 	"github.com/connordoman/doman/internal/pkg/timer"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/google/uuid"
@@ -18,38 +21,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-type AskSetup struct {
-	Service string `yaml:"service"`
-	Model   string `yaml:"model"`
-	ApiKey  string `yaml:"api_key"`
-}
-
-var askSetup = &AskSetup{
+var askSetup = &ask.Setup{
 	Service: "openai",
 	Model:   "gpt-4o-mini",
 	ApiKey:  "",
 }
-
-var base16Theme *huh.Theme = huh.ThemeBase16()
-
-var setupForm = huh.NewForm(
-	huh.NewGroup(
-		huh.NewSelect[string]().
-			Title("Select AI Service").
-			Options(
-				huh.NewOption("OpenAI", "openai"),
-			).
-			Value(&askSetup.Service)),
-	huh.NewGroup(
-		huh.NewInput().
-			Title("Model for "+askSetup.Service).
-			Value(&askSetup.Model)),
-	huh.NewGroup(
-		huh.NewInput().
-			Title("API Key for "+askSetup.Service).
-			Value(&askSetup.ApiKey),
-	),
-).WithTheme(base16Theme)
 
 var AskCommand = &cobra.Command{
 	Use:               "ask [prompt]",
@@ -112,7 +88,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	var conversation *data.Conversation
-	var history []pkg.MessageHistory
+	var history []ask.MessageHistory
 
 	if shouldContinue {
 		if conversationID == "" {
@@ -151,7 +127,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 
 		for _, msg := range messages {
-			history = append(history, pkg.MessageHistory{
+			history = append(history, ask.MessageHistory{
 				Role:    msg.Role,
 				Content: msg.Content,
 			})
@@ -170,7 +146,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		inputTitle := "Enter your question"
 		if shouldContinue {
 			title := conversation.Title
-			if !pkg.IsMeaningfulTitle(title) {
+			if !ask.IsMeaningfulTitle(title) {
 				title = conversation.ID
 			}
 			inputTitle = fmt.Sprintf(`Follow up on "%s"`, title)
@@ -194,8 +170,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	terminalWidth := pkg.DetectTerminalWidth()
 	responseWrapWidth := max(terminalWidth-4, 20)
 
-	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1).Width(terminalWidth - 2)
-	fmt.Println(promptStyle.Render(txt.Boldf("%s", txt.Bluef("You:")), prompt))
+	fmt.Println(ask.FormatPrompt(prompt))
 
 	apiKey, err := cmd.Flags().GetString("api-key")
 	if err != nil {
@@ -224,6 +199,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create new conversation if not continuing
+	var titleWaitGroup *sync.WaitGroup
 	if !shouldContinue {
 		conversationID = uuid.New().String()
 		service := "openai" // Default service
@@ -232,50 +208,53 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			titleModel = "gpt-5-nano"
 		}
 
-		// Create conversation immediately with fallback title
-		fallbackTitle := pkg.FallbackTitleFromPrompt(prompt)
-		_, err = data.CreateConversation(conversationID, fallbackTitle, model, service)
+		fallbackTitle := ask.FallbackTitleFromPrompt(prompt)
+		conversation, err = data.CreateConversation(conversationID, fallbackTitle, model, service)
 		if err != nil {
 			return fmt.Errorf("failed to create conversation: %w", err)
 		}
 
-		// Generate title asynchronously in a goroutine
+		titleWaitGroup = &sync.WaitGroup{}
+		titleWaitGroup.Add(1)
 		go func() {
+			defer titleWaitGroup.Done()
 			ctx := context.Background()
 			var generatedTitle string
 
-			if title, err := pkg.GenerateShortTitle(ctx, apiKey, titleModel, prompt); err != nil {
+			if title, err := ask.GenerateShortTitle(ctx, apiKey, titleModel, prompt); err != nil {
 				if verbose {
 					log.Printf("failed to generate short title with %s: %v", titleModel, err)
 				}
 
-				// Retry with conversation model if different
 				if titleModel != model {
 					if verbose {
 						log.Printf("retrying title generation with conversation model %s", model)
 					}
-					if altTitle, altErr := pkg.GenerateShortTitle(ctx, apiKey, model, prompt); altErr != nil {
+					if altTitle, altErr := ask.GenerateShortTitle(ctx, apiKey, model, prompt); altErr != nil {
 						if verbose {
 							log.Printf("fallback title generation failed: %v", altErr)
 						}
-					} else if pkg.IsMeaningfulTitle(altTitle) {
+					} else if ask.IsMeaningfulTitle(altTitle) {
 						generatedTitle = altTitle
 					}
 				}
-			} else if pkg.IsMeaningfulTitle(title) {
+			} else if ask.IsMeaningfulTitle(title) {
 				generatedTitle = title
 			} else if verbose {
 				log.Printf("generated title was empty or invalid; keeping fallback")
 			}
 
-			// Update conversation title if we got a meaningful title
 			if generatedTitle != "" {
 				if err := data.UpdateConversationTitle(conversationID, generatedTitle); err != nil {
 					if verbose {
 						log.Printf("failed to update conversation title: %v", err)
 					}
-				} else if verbose {
-					log.Printf("updated conversation title to: %q (model=%s)", generatedTitle, titleModel)
+				} else {
+					// Update the conversation object with the new title
+					conversation.Title = generatedTitle
+					if verbose {
+						log.Printf("updated conversation title to: %q (model=%s)", generatedTitle, titleModel)
+					}
 				}
 			}
 		}()
@@ -286,7 +265,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	askingMessage := pkg.RandomAskSplashText()
+	askingMessage := ask.RandomSplashText()
 
 	spinnerPrompt := askingMessage + "..."
 	if verbose {
@@ -300,17 +279,17 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 	if !dryRun {
 
-		if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
-			completion, err := pkg.PromptAi(model, apiKey, prompt, history)
+		if err := ask.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
+			completion, err := ask.PromptAI(model, apiKey, prompt, history)
 			if err != nil {
 				return err
 			}
 
-			if response, err = pkg.CollectResponse(completion.Choices, raw, responseWrapWidth); err != nil {
+			if response, err = ask.CollectResponse(completion.Choices, raw, responseWrapWidth); err != nil {
 				return err
 			}
 
-			if cost, exists := pkg.CalculateCost(model, completion); exists {
+			if cost, exists := ask.CalculateCost(model, completion); exists {
 				pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
 			}
 
@@ -342,15 +321,20 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
 
-		conversationTitle := conversation.Title
-		if conversationTitle == "" {
-			conversationTitle = conversationID[:8]
+		// Wait for title generation to complete if it's a new conversation
+		if titleWaitGroup != nil {
+			spinner.New().Title("").Action(func() {
+				titleWaitGroup.Wait()
+			}).Run()
 		}
 
-		// if shouldContinue {
-		// 	greyDot := txt.Greyf("\u2022")
-		// 	conversationInfo = fmt.Sprintf("%s %s %s %s", greyDot, idStyle.Render(conversationID[:8]), greyDot, txt.Greyf("Check important info for mistakes."))
-		// }
+		conversationTitle := ""
+		if conversation != nil {
+			conversationTitle = conversation.Title
+		}
+		if conversationTitle == "" || !ask.IsMeaningfulTitle(conversationTitle) {
+			conversationTitle = conversationID[:8]
+		}
 
 		idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
 
@@ -363,35 +347,5 @@ func runAsk(cmd *cobra.Command, args []string) error {
 }
 
 func runSetup() error {
-	fmt.Printf("Configuring %s:\n", txt.Boldf("doman ask"))
-
-	if err := setupForm.Run(); err != nil {
-		return fmt.Errorf("failed to run setup form: %w", err)
-	}
-
-	if askSetup.ApiKey == "" {
-		return fmt.Errorf("API Key is required")
-	}
-
-	viper.Set("ask.default_service", askSetup.Service)
-
-	switch askSetup.Service {
-	case "openai":
-		if askSetup.Model == "" {
-			return fmt.Errorf("model is required for OpenAI service")
-		}
-		viper.Set("ask.openai.default_model", askSetup.Model)
-		viper.Set("ask.openai.api_key", askSetup.ApiKey)
-	default:
-		return fmt.Errorf("unsupported service: %s", askSetup.Service)
-	}
-
-	if err := config.SaveConfig(); err != nil {
-		return fmt.Errorf("failed to save configuration: %w", err)
-	}
-
-	pkg.PrintSuccess("Configuration saved successfully!")
-	fmt.Printf("%s %s %s\n", txt.Greyf("You can now run"), txt.Boldf("doman ask"), txt.Greyf("to use your configuration."))
-
-	return nil
+	return ask.RunSetup(askSetup)
 }
