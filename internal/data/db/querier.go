@@ -17,6 +17,7 @@ type Querier interface {
 	GetMessagesByConversationId(ctx context.Context, conversationID string) ([]Message, error)
 	ListConversations(ctx context.Context, arg ListConversationsParams) ([]Conversation, error)
 	UpdateConversationTimestamp(ctx context.Context, id string) error
+	UpdateConversationTitle(ctx context.Context, arg UpdateConversationTitleParams) error
 }
 
 var _ Querier = (*Queries)(nil)
