@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/charmbracelet/glamour"
@@ -355,4 +356,8 @@ func FormatPrompt(prompt string) string {
 	terminalWidth := DetectTerminalWidth()
 	promptStyle := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1).Width(terminalWidth - 2)
 	return promptStyle.Render(txt.Boldf("%s", txt.Bluef("You:")), prompt)
+}
+
+func RandomAskSplashText() string {
+	return AskSplashText[rand.Intn(len(AskSplashText))]
 }

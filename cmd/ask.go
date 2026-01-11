@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -69,6 +68,7 @@ func init() {
 	AskCommand.Flags().String("style", "", "Markdown render style: dark|light|auto (default: dark)")
 	AskCommand.Flags().BoolP("continue", "c", false, "Continue previous conversation")
 	AskCommand.Flags().String("id", "", "Specific conversation ID to continue (requires --continue)")
+	AskCommand.Flags().BoolP("dry-run", "d", false, "Do not generate a response (titles will still be generated)")
 
 	AskCommand.AddCommand(AskConvosCommand)
 }
@@ -109,6 +109,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	// Handle --continue flag
 	shouldContinue, _ := cmd.Flags().GetBool("continue")
 	conversationID, _ := cmd.Flags().GetString("id")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	var conversation *data.Conversation
 	var history []pkg.MessageHistory
@@ -231,38 +232,53 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			titleModel = "gpt-5-nano"
 		}
 
-		title := pkg.FallbackTitleFromPrompt(prompt)
-		if generatedTitle, err := pkg.GenerateShortTitle(cmd.Context(), apiKey, titleModel, prompt); err != nil {
-			if verbose {
-				log.Printf("failed to generate short title with %s: %v", titleModel, err)
-			}
-
-			if titleModel != model {
-				if verbose {
-					log.Printf("retrying title generation with conversation model %s", model)
-				}
-				if altTitle, altErr := pkg.GenerateShortTitle(cmd.Context(), apiKey, model, prompt); altErr != nil {
-					if verbose {
-						log.Printf("fallback title generation failed: %v", altErr)
-					}
-				} else if pkg.IsMeaningfulTitle(altTitle) {
-					title = altTitle
-				}
-			}
-		} else if pkg.IsMeaningfulTitle(generatedTitle) {
-			title = generatedTitle
-		} else if verbose {
-			log.Printf("generated title was empty or invalid; using fallback")
-		}
-
-		if verbose {
-			log.Printf("conversation title: %q (model=%s)", title, titleModel)
-		}
-
-		_, err = data.CreateConversation(conversationID, title, model, service)
+		// Create conversation immediately with fallback title
+		fallbackTitle := pkg.FallbackTitleFromPrompt(prompt)
+		_, err = data.CreateConversation(conversationID, fallbackTitle, model, service)
 		if err != nil {
 			return fmt.Errorf("failed to create conversation: %w", err)
 		}
+
+		// Generate title asynchronously in a goroutine
+		go func() {
+			ctx := context.Background()
+			var generatedTitle string
+
+			if title, err := pkg.GenerateShortTitle(ctx, apiKey, titleModel, prompt); err != nil {
+				if verbose {
+					log.Printf("failed to generate short title with %s: %v", titleModel, err)
+				}
+
+				// Retry with conversation model if different
+				if titleModel != model {
+					if verbose {
+						log.Printf("retrying title generation with conversation model %s", model)
+					}
+					if altTitle, altErr := pkg.GenerateShortTitle(ctx, apiKey, model, prompt); altErr != nil {
+						if verbose {
+							log.Printf("fallback title generation failed: %v", altErr)
+						}
+					} else if pkg.IsMeaningfulTitle(altTitle) {
+						generatedTitle = altTitle
+					}
+				}
+			} else if pkg.IsMeaningfulTitle(title) {
+				generatedTitle = title
+			} else if verbose {
+				log.Printf("generated title was empty or invalid; keeping fallback")
+			}
+
+			// Update conversation title if we got a meaningful title
+			if generatedTitle != "" {
+				if err := data.UpdateConversationTitle(conversationID, generatedTitle); err != nil {
+					if verbose {
+						log.Printf("failed to update conversation title: %v", err)
+					}
+				} else if verbose {
+					log.Printf("updated conversation title to: %q (model=%s)", generatedTitle, titleModel)
+				}
+			}
+		}()
 	} else {
 		// Update conversation timestamp
 		if err := data.UpdateConversationTimestamp(conversationID); err != nil {
@@ -270,7 +286,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	askingMessage := pkg.AskSplashText[rand.Intn(len(pkg.AskSplashText))]
+	askingMessage := pkg.RandomAskSplashText()
 
 	spinnerPrompt := askingMessage + "..."
 	if verbose {
@@ -281,45 +297,64 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 	var response string
 	var pricing string
-	if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
-		completion, err := pkg.PromptAi(model, apiKey, prompt, history)
-		if err != nil {
+
+	if !dryRun {
+
+		if err := pkg.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
+			completion, err := pkg.PromptAi(model, apiKey, prompt, history)
+			if err != nil {
+				return err
+			}
+
+			if response, err = pkg.CollectResponse(completion.Choices, raw, responseWrapWidth); err != nil {
+				return err
+			}
+
+			if cost, exists := pkg.CalculateCost(model, completion); exists {
+				pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
+			}
+
+			return nil
+		}).Run(); err != nil {
 			return err
 		}
 
-		if response, err = pkg.CollectResponse(completion.Choices, raw, responseWrapWidth); err != nil {
-			return err
-		}
-
-		if cost, exists := pkg.CalculateCost(model, completion); exists {
-			pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
-		}
-
-		return nil
-	}).Run(); err != nil {
-		return err
+	} else {
+		response = "\n<dry-run> No response was generated.\n"
 	}
 
 	timer.Stop()
 
-	// Store user message
-	if _, err := data.CreateMessage(conversationID, "user", prompt); err != nil {
-		return fmt.Errorf("failed to store user message: %w", err)
-	}
-
-	// Store assistant response
-	if _, err := data.CreateMessage(conversationID, "assistant", response); err != nil {
-		return fmt.Errorf("failed to store assistant message: %w", err)
-	}
-
-	if response != "" {
-		fmt.Println(response)
-		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
-		if shouldContinue {
-			idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
-			conversationInfo = fmt.Sprintf(" \u2022 %s \u2022 %s", idStyle.Render(conversationID[:8]), txt.Greyf("Check important info for mistakes."))
+	if !dryRun {
+		// Store user message
+		if _, err := data.CreateMessage(conversationID, "user", prompt); err != nil {
+			return fmt.Errorf("failed to store user message: %w", err)
 		}
-		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s", model, pricing, timer), conversationInfo)
+
+		// Store assistant response
+		if _, err := data.CreateMessage(conversationID, "assistant", response); err != nil {
+			return fmt.Errorf("failed to store assistant message: %w", err)
+		}
+	}
+
+	if response != "" || dryRun {
+		fmt.Println(lipgloss.NewStyle().Italic(dryRun).Render(response))
+
+		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
+
+		conversationTitle := conversation.Title
+		if conversationTitle == "" {
+			conversationTitle = conversationID[:8]
+		}
+
+		// if shouldContinue {
+		// 	greyDot := txt.Greyf("\u2022")
+		// 	conversationInfo = fmt.Sprintf("%s %s %s %s", greyDot, idStyle.Render(conversationID[:8]), greyDot, txt.Greyf("Check important info for mistakes."))
+		// }
+
+		idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
+
+		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s \u2022 %s", model, pricing, timer, idStyle.Render(conversationTitle)), conversationInfo)
 	} else {
 		fmt.Println(txt.Italicf("No response received"))
 	}

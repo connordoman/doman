@@ -218,3 +218,19 @@ func (q *Queries) UpdateConversationTimestamp(ctx context.Context, id string) er
 	_, err := q.db.ExecContext(ctx, updateConversationTimestamp, id)
 	return err
 }
+
+const updateConversationTitle = `-- name: UpdateConversationTitle :exec
+UPDATE conversations
+SET title = ?, updated_at = CURRENT_TIMESTAMP
+WHERE id = ?
+`
+
+type UpdateConversationTitleParams struct {
+	Title string `json:"title"`
+	ID    string `json:"id"`
+}
+
+func (q *Queries) UpdateConversationTitle(ctx context.Context, arg UpdateConversationTitleParams) error {
+	_, err := q.db.ExecContext(ctx, updateConversationTitle, arg.Title, arg.ID)
+	return err
+}
