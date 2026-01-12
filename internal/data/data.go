@@ -154,6 +154,23 @@ func UpdateConversationTimestamp(id string) error {
 	return nil
 }
 
+// UpdateConversationTitle updates the title of a conversation
+func UpdateConversationTitle(id, title string) error {
+	if queries == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	ctx := context.Background()
+	if err := queries.UpdateConversationTitle(ctx, db.UpdateConversationTitleParams{
+		ID:    id,
+		Title: title,
+	}); err != nil {
+		return fmt.Errorf("failed to update conversation title: %w", err)
+	}
+
+	return nil
+}
+
 // CreateMessage creates a new message in a conversation
 func CreateMessage(conversationID, role, content string) (*Message, error) {
 	if queries == nil {
