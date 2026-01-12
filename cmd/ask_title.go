@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/connordoman/doman/internal/pkg"
+	"github.com/connordoman/doman/internal/pkg/ask"
 	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,7 +42,7 @@ func runAskTitlesCommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("prompt cannot be empty")
 	}
 
-	fmt.Println(pkg.FormatPrompt(prompt))
+	fmt.Println(ask.FormatPrompt(prompt))
 
 	apiKey := viper.GetString("ask.openai.api_key")
 	if apiKey == "" {
@@ -53,7 +53,7 @@ func runAskTitlesCommand(cmd *cobra.Command, args []string) error {
 		titleModel = "gpt-5-nano"
 	}
 
-	title, err := pkg.GenerateShortTitle(cmd.Context(), apiKey, titleModel, prompt)
+	title, err := ask.GenerateShortTitle(cmd.Context(), apiKey, titleModel, prompt)
 	if err != nil {
 		return fmt.Errorf("failed to generate short title: %w", err)
 	}
