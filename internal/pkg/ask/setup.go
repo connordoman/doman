@@ -11,9 +11,10 @@ import (
 )
 
 type Setup struct {
-	Service string `yaml:"service"`
-	Model   string `yaml:"model"`
-	ApiKey  string `yaml:"api_key"`
+	Service    string `yaml:"service"`
+	Model      string `yaml:"model"`
+	QuickModel string `yaml:"quick_model"`
+	ApiKey     string `yaml:"api_key"`
 }
 
 var base16Theme *huh.Theme = huh.ThemeBase16()
@@ -31,6 +32,10 @@ func NewSetupForm(setup *Setup) *huh.Form {
 			huh.NewInput().
 				Title("Model for "+setup.Service).
 				Value(&setup.Model)),
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Quick model for "+setup.Service).
+				Value(&setup.QuickModel)),
 		huh.NewGroup(
 			huh.NewInput().
 				Title("API Key for "+setup.Service).
@@ -58,7 +63,11 @@ func RunSetup(setup *Setup) error {
 		if setup.Model == "" {
 			return fmt.Errorf("model is required for OpenAI service")
 		}
+		if setup.QuickModel == "" {
+			return fmt.Errorf("quick model is required for OpenAI service")
+		}
 		viper.Set("ask.openai.default_model", setup.Model)
+		viper.Set("ask.openai.quick_model", setup.QuickModel)
 		viper.Set("ask.openai.api_key", setup.ApiKey)
 	default:
 		return fmt.Errorf("unsupported service: %s", setup.Service)

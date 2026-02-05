@@ -15,5 +15,6 @@ func init() {
 	ConfigCommand.AddCommand(
 		config.FindConfigCommand,
 		config.EditConfigCommand,
+		config.InitConfigCommand,
 	)
 }
