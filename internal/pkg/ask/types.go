@@ -41,13 +41,13 @@ var SplashTexts = []string{
 	"Pushing to production",
 	"Talking to the little man",
 	"Getting a second opinion",
-	"Looking it up for you (even though you could probably do it)",
+	"Stealing it from Reddit",
 	"Getting the lowdown",
 	"Writing a strongly worded letter",
 	"Lighting a signal fire",
 	"Using a small village's electricity budget for this",
 	"Asking the AI to ask the AI",
-	"Preparing to shut off PS4",
+	"Preparing to turn off PS4",
 	"Castling",
 	"Throwing it back",
 	"Consulting the tea leaves",
@@ -74,6 +74,30 @@ var SplashTexts = []string{
 	"I'm working on it",
 	"Swiping right",
 	"Finishing my bathroom break",
+	"\"Thinking\"",
+	"Copy-pasting from Wikipedia",
+	"Calling your mom",
+	"Binging it",
+	"Asking the AI to ask the AI",
+	"Finishing the Wordle",
+	"Sifting through the sum of human knowledge",
+	"Possibly taking no for an answer",
+	"Drinking a BIG glass of water",
+	"Literally what do you mean",
+	"Reading the fine print",
+	"··· --- ···",
+	"Licking my finger & holding it up to the wind",
+	"Putting my ear to the ground",
+	"Seeing if my cat knows anything",
+	"Chugging a Miller Lite",
+	"Using the power of suggestion",
+	"Finishing my degree",
+	"Gonna try standup comedy. No? Okay then",
+	"Uhhh",
+	"Finishing the \"art\" I was working on",
+	"I don't like the sounds of that",
+	"Figuring out your address",
+	"Hitting my vape",
 }
 
 const DeveloperDefinedSystemMessage = `
@@ -120,6 +144,23 @@ Self-check before you send:
 - If you used a code fence, ensure it has a language tag.
 
 The user may also configure an additional system message. That message can override these rules.
+`
+
+const QuickSystemMessage = `
+You are a helpful assistant inside a CLI tool called 'doman'. Users can only ask text-based questions.
+
+Core response goals:
+- Respond as fast as possible with a concise answer.
+- Output only the summary portion of the main template.
+
+Required output template:
+## Quick answer
+<Keep it brief. Use bullets if helpful.>
+
+Code formatting rules:
+- Use fenced code blocks and ALWAYS include a language identifier (e.g. bash, sh, go, json, yaml, python, typescript, rust, text).
+- Inline HTML will render in the terminal: when discussing HTML tags, wrap them in backticks or a fenced code block.
+- Do NOT use HTML to format your response.
 `
 
 const UserDefinedSystemMessagePrefix = "Additional system message, provided by the end user: \n\n"

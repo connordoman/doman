@@ -59,7 +59,9 @@ func InitConfig() error {
 	viper.SetEnvPrefix("DOMAN")
 
 	viper.SetDefault("ask.default_service", "openai")
-	viper.SetDefault("ask.openai.model", "gpt-4o-mini")
+	viper.SetDefault("ask.openai.default_model", "gpt-4o-mini")
+	viper.SetDefault("ask.openai.quick_model", "gpt-5-mini")
+	viper.SetDefault("ask.preferred_languages", []string{})
 
 	viper.BindEnv("ask.openai.api_key", "OPENAI_API_KEY")
 
