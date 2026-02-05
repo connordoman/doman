@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/connordoman/doman/internal/config"
 	"github.com/connordoman/doman/internal/data"
@@ -22,9 +21,10 @@ import (
 )
 
 var askSetup = &ask.Setup{
-	Service: "openai",
-	Model:   "gpt-4o-mini",
-	ApiKey:  "",
+	Service:    "openai",
+	Model:      "gpt-4o-mini",
+	QuickModel: "gpt-5-mini",
+	ApiKey:     "",
 }
 
 var AskCommand = &cobra.Command{
@@ -45,6 +45,7 @@ func init() {
 	AskCommand.Flags().BoolP("continue", "c", false, "Continue previous conversation")
 	AskCommand.Flags().String("id", "", "Specific conversation ID to continue (requires --continue)")
 	AskCommand.Flags().BoolP("dry-run", "d", false, "Do not generate a response (titles will still be generated)")
+	AskCommand.Flags().BoolP("quick", "q", false, "Respond in a short format with a small model (gpt-5-mini)")
 
 	AskCommand.AddCommand(AskConvosCommand)
 }
@@ -64,6 +65,7 @@ func closeAskDB(cmd *cobra.Command, args []string) {
 func runAsk(cmd *cobra.Command, args []string) error {
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	raw, _ := cmd.Flags().GetBool("raw")
+	quick, _ := cmd.Flags().GetBool("quick")
 	// Optional render style override for this invocation
 	if style, _ := cmd.Flags().GetString("style"); style != "" {
 		viper.Set("ask.render_style", style)
@@ -188,7 +190,12 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get model flag: %w", err)
 	}
 	if model == "" {
-		if conversation != nil {
+		if quick {
+			model = viper.GetString("ask.openai.quick_model")
+			if model == "" {
+				model = "gpt-5-mini"
+			}
+		} else if conversation != nil {
 			model = conversation.Model
 		} else {
 			model = viper.GetString("ask.openai.default_model")
@@ -267,10 +274,15 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 	askingMessage := ask.RandomSplashText()
 
-	spinnerPrompt := askingMessage + "..."
+	var spinnerPrompt strings.Builder
 	if verbose {
-		spinnerPrompt = fmt.Sprintf("%s %s...", askingMessage, txt.Boldf("%s", model))
+		spinnerPrompt.WriteString(txt.Boldf("%s ", model))
 	}
+	if quick {
+		spinnerPrompt.WriteString(txt.Magentaf("(quick mode) "))
+	}
+	spinnerPrompt.WriteString(askingMessage)
+	spinnerPrompt.WriteString("...")
 
 	timer := timer.NewStopwatch(true)
 
@@ -278,9 +290,13 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	var pricing string
 
 	if !dryRun {
+		systemMessage := ask.DeveloperDefinedSystemMessage
+		if quick {
+			systemMessage = ask.QuickSystemMessage
+		}
 
-		if err := ask.AskingSpinner(spinnerPrompt, func(ctx context.Context) error {
-			completion, err := ask.PromptAI(model, apiKey, prompt, history)
+		if err := ask.AskingSpinner(spinnerPrompt.String(), func(ctx context.Context) error {
+			completion, err := ask.PromptAIWithSystemMessage(model, apiKey, prompt, history, systemMessage)
 			if err != nil {
 				return err
 			}
@@ -317,14 +333,19 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	}
 
 	if response != "" || dryRun {
-		fmt.Println(lipgloss.NewStyle().Italic(dryRun).Render(response))
+		if dryRun {
+			fmt.Println(lipgloss.NewStyle().Italic(dryRun).Render(response))
+		} else {
+			fmt.Println(response)
+		}
 
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")
 
 		// Wait for title generation to complete if it's a new conversation
 		if titleWaitGroup != nil {
-			spinner.New().Title("").Action(func() {
+			ask.AskingSpinner("", func(ctx context.Context) error {
 				titleWaitGroup.Wait()
+				return nil
 			}).Run()
 		}
 

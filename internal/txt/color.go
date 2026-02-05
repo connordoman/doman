@@ -27,6 +27,9 @@ var (
 
 	blueStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#3b82f6"))
+
+	magentaStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#c026d3"))
 )
 
 func Boldf(format string, args ...any) string {
@@ -39,6 +42,10 @@ func Greyf(format string, args ...any) string {
 
 func Bluef(format string, args ...any) string {
 	return blueStyle.Render(fmt.Sprintf(format, args...))
+}
+
+func Magentaf(format string, args ...any) string {
+	return magentaStyle.Render(fmt.Sprintf(format, args...))
 }
 
 func Successf(format string, args ...any) string {

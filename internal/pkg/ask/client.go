@@ -11,12 +11,22 @@ import (
 )
 
 func PromptAI(model, apiKey, prompt string, history []MessageHistory) (*openai.ChatCompletion, error) {
+	return PromptAIWithSystemMessage(model, apiKey, prompt, history, DeveloperDefinedSystemMessage)
+}
+
+func PromptAIWithSystemMessage(model, apiKey, prompt string, history []MessageHistory, systemMessage string) (*openai.ChatCompletion, error) {
 	userDefinedSystemMessage := viper.GetString("ask.system_message")
+	preferredLanguages := readPreferredLanguages()
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 
 	messages := []openai.ChatCompletionMessageParamUnion{}
 
-	messages = append(messages, openai.SystemMessage(DeveloperDefinedSystemMessage))
+	if systemMessage != "" {
+		if len(preferredLanguages) > 0 {
+			systemMessage = fmt.Sprintf("%s\n\nPreferred programming languages: %s.", systemMessage, strings.Join(preferredLanguages, ", "))
+		}
+		messages = append(messages, openai.SystemMessage(systemMessage))
+	}
 
 	if userDefinedSystemMessage != "" {
 		messages = append(messages, openai.SystemMessage("Additional system message, provided by the end user: "+userDefinedSystemMessage))
@@ -44,6 +54,23 @@ func PromptAI(model, apiKey, prompt string, history []MessageHistory) (*openai.C
 	}
 
 	return chatCompletion, nil
+}
+
+func readPreferredLanguages() []string {
+	languages := viper.GetStringSlice("ask.preferred_languages")
+	if len(languages) == 0 {
+		return nil
+	}
+
+	normalized := make([]string, 0, len(languages))
+	for _, language := range languages {
+		language = strings.TrimSpace(language)
+		if language != "" {
+			normalized = append(normalized, language)
+		}
+	}
+
+	return normalized
 }
 
 func GenerateShortTitle(ctx context.Context, apiKey, model, prompt string) (string, error) {
