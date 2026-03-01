@@ -15,6 +15,7 @@ import (
 	"github.com/connordoman/doman/internal/pkg/ask"
 	"github.com/connordoman/doman/internal/pkg/timer"
 	"github.com/connordoman/doman/internal/txt"
+	"github.com/connordoman/windy"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -145,7 +146,10 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		prompt = strings.TrimSpace(strings.Join(args, " "))
 	} else {
-		inputTitle := "Enter your question"
+		inputTitle := "Enter your question:"
+		if quick {
+			inputTitle = "Enter your quick question:"
+		}
 		if shouldContinue {
 			title := conversation.Title
 			if !ask.IsMeaningfulTitle(title) {
@@ -172,7 +176,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	terminalWidth := pkg.DetectTerminalWidth()
 	responseWrapWidth := max(terminalWidth-4, 20)
 
-	fmt.Println(ask.FormatPrompt(prompt))
+	fmt.Println(ask.FormatPrompt(prompt, quick))
 
 	apiKey, err := cmd.Flags().GetString("api-key")
 	if err != nil {
@@ -279,7 +283,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		spinnerPrompt.WriteString(txt.Boldf("%s ", model))
 	}
 	if quick {
-		spinnerPrompt.WriteString(txt.Magentaf("(quick mode) "))
+		spinnerPrompt.WriteString("⚡️ ")
 	}
 	spinnerPrompt.WriteString(askingMessage)
 	spinnerPrompt.WriteString("...")
@@ -357,7 +361,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			conversationTitle = conversationID[:8]
 		}
 
-		idStyle := lipgloss.NewStyle().Underline(true).Foreground(lipgloss.Color("#6b7280"))
+		idStyle := lipgloss.NewStyle().Underline(true).Foreground(windy.Neutral800.Glossy())
 
 		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s \u2022 %s", model, pricing, timer, idStyle.Render(conversationTitle)), conversationInfo)
 	} else {
