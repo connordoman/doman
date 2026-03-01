@@ -4,32 +4,33 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/connordoman/windy"
 )
 
 var (
 	successStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#22c55e"))
+			Foreground(windy.Green600.Glossy())
 
 	errorStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#ef4444"))
+			Foreground(windy.Red600.Glossy())
 
 	warningStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#f59e0b"))
+			Foreground(windy.Yellow600.Glossy())
 
 	boldStyle = lipgloss.NewStyle().
 			Bold(true)
 
 	greyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280"))
+			Foreground(windy.Neutral800.Glossy())
 
 	blueStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#3b82f6"))
+			Foreground(windy.Blue600.Glossy())
 
 	magentaStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#c026d3"))
+			Foreground(windy.Violet600.Glossy())
 )
 
 func Boldf(format string, args ...any) string {
