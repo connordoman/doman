@@ -42,7 +42,7 @@ func runAskTitlesCommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("prompt cannot be empty")
 	}
 
-	fmt.Println(ask.FormatPrompt(prompt))
+	fmt.Println(ask.FormatPrompt(prompt, false))
 
 	apiKey := viper.GetString("ask.openai.api_key")
 	if apiKey == "" {
