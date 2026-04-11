@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
@@ -16,6 +17,26 @@ var BranchStatsCommand = &cobra.Command{
 	Short: "Print statistics about a git branch",
 	RunE:  runBranchStatsCommand,
 	Args:  cobra.MaximumNArgs(1),
+
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if !pkg.CheckIsGitRepo() {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		branches, err := pkg.GetGitBranches()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		var matches []string
+		for _, b := range branches {
+			if strings.HasPrefix(b, toComplete) {
+				matches = append(matches, b)
+			}
+		}
+
+		return matches, cobra.ShellCompDirectiveDefault
+	},
 }
 
 func init() {
