@@ -85,6 +85,26 @@ func GetGitBranch() (string, error) {
 	return strings.TrimSpace(branch), nil
 }
 
+func GetGitBranches() ([]string, error) {
+	branchesRaw, err := RunCommand("git", "branch", "--format=%(refname:short)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get git branches: %w", err)
+	}
+	lines := strings.Split(branchesRaw, "\n")
+
+	var branches []string
+	for _, line := range lines {
+		branch := strings.TrimSpace(line)
+		if branch == "" {
+			continue
+		}
+
+		branches = append(branches, branch)
+	}
+
+	return branches, nil
+}
+
 func GetGitRemoteName() (string, error) {
 	remote, err := RunCommand("git", "remote", "show")
 	if err != nil {
