@@ -4,11 +4,11 @@ set -euo pipefail
 VERSION=${VERSION:-"latest"}
 REPO="connordoman/doman"
 
-# Determine install directory (prefer $HOME/go/bin to avoid sudo)
+# Determine install directory (prefer ~/.local/bin to avoid sudo)
 if [ -z "${INSTALL_DIR:-}" ]; then
-  GO_BIN_DIR="$HOME/go/bin"
-  if [ -w "$HOME" ] && (mkdir -p "$GO_BIN_DIR" 2>/dev/null || [ -w "$GO_BIN_DIR" ]); then
-    INSTALL_DIR="$GO_BIN_DIR"
+  LOCAL_BIN_DIR="$HOME/.local/bin"
+  if [ -w "$HOME" ] && (mkdir -p "$LOCAL_BIN_DIR" 2>/dev/null || [ -w "$LOCAL_BIN_DIR" ]); then
+    INSTALL_DIR="$LOCAL_BIN_DIR"
   else
     INSTALL_DIR="/usr/local/bin"
   fi
@@ -115,8 +115,8 @@ if command -v doman >/dev/null 2>&1; then
 else
   echo "Warning: doman was installed but is not in PATH" >&2
   echo "You may need to add $INSTALL_DIR to your PATH" >&2
-  if [ "$INSTALL_DIR" = "$HOME/go/bin" ]; then
-    echo "Run: export PATH=\"\$PATH:\$HOME/go/bin\"" >&2
+  if [ "$INSTALL_DIR" = "$HOME/.local/bin" ]; then
+    echo "Run: export PATH=\"\$PATH:\$HOME/.local/bin\"" >&2
     
     profile_path="$HOME/.profile"
     if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
