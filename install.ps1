@@ -6,14 +6,14 @@ $ErrorActionPreference = "Stop"
 $VERSION = if ($env:VERSION) { $env:VERSION } else { "latest" }
 $REPO = "connordoman/doman"
 
-# Determine install directory (prefer $HOME\go\bin to avoid admin)
+# Determine install directory (prefer ~\.local\bin to avoid admin)
 if (-not $env:INSTALL_DIR) {
-    $GoBinDir = Join-Path $env:USERPROFILE "go\bin"
+    $LocalBinDir = Join-Path $env:USERPROFILE ".local\bin"
     try {
-        if (-not (Test-Path $GoBinDir)) {
-            New-Item -ItemType Directory -Path $GoBinDir -Force | Out-Null
+        if (-not (Test-Path $LocalBinDir)) {
+            New-Item -ItemType Directory -Path $LocalBinDir -Force | Out-Null
         }
-        $INSTALL_DIR = $GoBinDir
+        $INSTALL_DIR = $LocalBinDir
     } catch {
         $INSTALL_DIR = Join-Path $env:ProgramFiles "doman"
     }
@@ -113,7 +113,7 @@ try {
     } else {
         Write-Warning "doman was installed but is not in PATH"
         Write-Warning "You may need to add $INSTALL_DIR to your PATH"
-        if ($INSTALL_DIR -eq $GoBinDir) {
+        if ($INSTALL_DIR -eq $LocalBinDir) {
             Write-Host "Run: `$env:Path += `";$INSTALL_DIR`"" -ForegroundColor Yellow
             Write-Host "Or add it permanently: [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + `";$INSTALL_DIR`", 'User')" -ForegroundColor Yellow
         }
