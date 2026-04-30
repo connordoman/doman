@@ -158,7 +158,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			inputTitle = fmt.Sprintf(`Follow up on "%s"`, title)
 		}
 
-		err := huh.NewInput().
+		err := huh.NewText().
 			Title(inputTitle).
 			Value(&prompt).
 			Run()
@@ -282,9 +282,6 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	if verbose {
 		spinnerPrompt.WriteString(txt.Boldf("%s ", model))
 	}
-	if quick {
-		spinnerPrompt.WriteString("⚡️ ")
-	}
 	spinnerPrompt.WriteString(askingMessage)
 	spinnerPrompt.WriteString("...")
 
@@ -299,7 +296,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			systemMessage = ask.QuickSystemMessage
 		}
 
-		if err := ask.AskingSpinner(spinnerPrompt.String(), func(ctx context.Context) error {
+		if err := ask.AskingSpinner(spinnerPrompt.String(), quick, func(ctx context.Context) error {
 			completion, err := ask.PromptAIWithSystemMessage(model, apiKey, prompt, history, systemMessage)
 			if err != nil {
 				return err
@@ -347,7 +344,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 
 		// Wait for title generation to complete if it's a new conversation
 		if titleWaitGroup != nil {
-			ask.AskingSpinner("", func(ctx context.Context) error {
+			ask.AskingSpinner("", quick, func(ctx context.Context) error {
 				titleWaitGroup.Wait()
 				return nil
 			}).Run()
@@ -361,7 +358,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			conversationTitle = conversationID[:8]
 		}
 
-		idStyle := lipgloss.NewStyle().Underline(true).Foreground(windy.Neutral800.Glossy())
+		idStyle := lipgloss.NewStyle().Underline(true).Foreground(windy.Neutral500.Glossy())
 
 		fmt.Printf("%s %s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("\u2022 %s%s \u2022 %s \u2022 %s", model, pricing, timer, idStyle.Render(conversationTitle)), conversationInfo)
 	} else {
