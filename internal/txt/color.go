@@ -24,7 +24,7 @@ var (
 			Bold(true)
 
 	greyStyle = lipgloss.NewStyle().
-			Foreground(windy.Neutral800.Glossy())
+			Foreground(windy.Neutral500.Glossy())
 
 	blueStyle = lipgloss.NewStyle().
 			Foreground(windy.Blue600.Glossy())
