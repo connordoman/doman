@@ -29,3 +29,4 @@ bin/
 dist/
 
 junk/
+.DS_Store
