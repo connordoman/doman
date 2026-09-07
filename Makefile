@@ -3,7 +3,7 @@
 BINARY_NAME=doman
 INSTALL_PATH=/usr/local/bin
 
-MODULE := github.com/connordoman/doman
+MODULE := doman.sh
 CONFIG_PATH := internal/config
 
 DEFAULT_VERSION := 0.0.0

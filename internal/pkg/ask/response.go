@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"doman.sh/internal/pkg"
 	"github.com/charmbracelet/glamour"
-	"github.com/connordoman/doman/internal/pkg"
 	openai "github.com/openai/openai-go"
 	"github.com/spf13/viper"
 )

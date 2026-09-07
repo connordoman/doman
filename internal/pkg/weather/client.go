@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	openmeteo "github.com/connordoman/doman/internal/pkg/weather/openmeteo"
-	"github.com/connordoman/doman/internal/txt"
+	openmeteo "doman.sh/internal/pkg/weather/openmeteo"
+	"doman.sh/internal/txt"
 )
 
 func (c *WeatherClient) makeMeteoURL(path string) string {

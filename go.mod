@@ -1,4 +1,4 @@
-module github.com/connordoman/doman
+module doman.sh
 
 go 1.25.0
 
