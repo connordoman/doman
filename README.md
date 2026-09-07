@@ -6,31 +6,40 @@ Originally built as a collection of tools for doing work, this program has evolv
 
 ## Installation
 
+### Quick Install
+
+```bash
+go install doman.sh/doman@latest
+```
+
 ### Unix/macOS/Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/connordoman/doman/main/install.sh | bash
+curl -fsSL https://doman.sh/install.sh | bash
 ```
 
 Or download and run manually:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/connordoman/doman/main/install.sh -o install.sh
+curl -fsSL https://doman.sh/install.sh -o install.sh
 bash install.sh
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/connordoman/doman/main/install.ps1 | iex
+irm https://doman.sh/install.ps1 | iex
 ```
 
 Or download and run manually:
+
 ```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/connordoman/doman/main/install.ps1 -OutFile install.ps1
+Invoke-WebRequest -Uri https://doman.sh/install.ps1 -OutFile install.ps1
 .\install.ps1
 ```
 
 **Note:** If you encounter execution policy restrictions, run:
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
