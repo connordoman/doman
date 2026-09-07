@@ -40,5 +40,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 These are the commands I use most often:
 
 1. `ask` – Get a question answered by AI (requires your own OpenAI API key)
-2. `ip` – Display your public and private IP address.
-3. `git author` – Display the name & email of the current Git user.
+2. `ask live` – A full screen, back and forth chat. Resume it with `-c`, and type `/quick` anywhere in a message for a fast answer from the smaller model.
+3. `ip` – Display your public and private IP address.
+4. `git author` – Display the name & email of the current Git user.
