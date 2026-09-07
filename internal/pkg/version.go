@@ -1,6 +1,6 @@
 package pkg
 
-import "doman.sh/internal/config"
+import "doman.sh/doman/internal/config"
 
 func VersionString() string {
 	commit := config.CommitHash

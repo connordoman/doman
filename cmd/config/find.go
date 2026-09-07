@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"doman.sh/internal/config"
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 

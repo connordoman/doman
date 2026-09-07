@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"doman.sh/internal/pkg/ask"
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/pkg/ask"
+	"doman.sh/doman/internal/txt"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

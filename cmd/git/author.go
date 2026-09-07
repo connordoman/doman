@@ -6,8 +6,8 @@ import (
 	"log"
 	"strings"
 
-	"doman.sh/internal/pkg"
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/pkg"
+	"doman.sh/doman/internal/txt"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )

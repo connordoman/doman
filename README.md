@@ -9,32 +9,32 @@ Originally built as a collection of tools for doing work, this program has evolv
 ### Quick Install
 
 ```bash
-go install doman.sh/doman@latest
+go install doman.sh/doman/doman@latest
 ```
 
 ### Unix/macOS/Linux
 
 ```bash
-curl -fsSL https://doman.sh/install.sh | bash
+curl -fsSL https://doman.sh/doman/install.sh | bash
 ```
 
 Or download and run manually:
 
 ```bash
-curl -fsSL https://doman.sh/install.sh -o install.sh
+curl -fsSL https://doman.sh/doman/install.sh -o install.sh
 bash install.sh
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://doman.sh/install.ps1 | iex
+irm https://doman.sh/doman/install.ps1 | iex
 ```
 
 Or download and run manually:
 
 ```powershell
-Invoke-WebRequest -Uri https://doman.sh/install.ps1 -OutFile install.ps1
+Invoke-WebRequest -Uri https://doman.sh/doman/install.ps1 -OutFile install.ps1
 .\install.ps1
 ```
 
