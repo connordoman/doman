@@ -10,18 +10,46 @@ import (
 	"github.com/spf13/viper"
 )
 
+// PromptOptions describes a single chat completion request.
+type PromptOptions struct {
+	Model   string
+	APIKey  string
+	Prompt  string
+	History []MessageHistory
+
+	// SystemMessage is the conversation-level system message. It is sent at
+	// the head of every request.
+	SystemMessage string
+
+	// TurnSystemMessage is injected immediately before the user prompt and is
+	// never written back into History, so per-turn instructions (quick mode,
+	// for example) cost tokens only on the turn that actually uses them.
+	TurnSystemMessage string
+}
+
 func PromptAI(model, apiKey, prompt string, history []MessageHistory) (*openai.ChatCompletion, error) {
 	return PromptAIWithSystemMessage(model, apiKey, prompt, history, DeveloperDefinedSystemMessage)
 }
 
 func PromptAIWithSystemMessage(model, apiKey, prompt string, history []MessageHistory, systemMessage string) (*openai.ChatCompletion, error) {
+	return PromptAIWithOptions(context.Background(), PromptOptions{
+		Model:         model,
+		APIKey:        apiKey,
+		Prompt:        prompt,
+		History:       history,
+		SystemMessage: systemMessage,
+	})
+}
+
+func PromptAIWithOptions(ctx context.Context, opts PromptOptions) (*openai.ChatCompletion, error) {
 	userDefinedSystemMessage := viper.GetString("ask.system_message")
 	preferredLanguages := readPreferredLanguages()
-	client := openai.NewClient(option.WithAPIKey(apiKey))
+	client := openai.NewClient(option.WithAPIKey(opts.APIKey))
 
 	messages := []openai.ChatCompletionMessageParamUnion{}
 
-	if systemMessage != "" {
+	if opts.SystemMessage != "" {
+		systemMessage := opts.SystemMessage
 		if len(preferredLanguages) > 0 {
 			systemMessage = fmt.Sprintf("%s\n\nPreferred programming languages: %s.", systemMessage, strings.Join(preferredLanguages, ", "))
 		}
@@ -29,10 +57,10 @@ func PromptAIWithSystemMessage(model, apiKey, prompt string, history []MessageHi
 	}
 
 	if userDefinedSystemMessage != "" {
-		messages = append(messages, openai.SystemMessage("Additional system message, provided by the end user: "+userDefinedSystemMessage))
+		messages = append(messages, openai.SystemMessage(UserDefinedSystemMessagePrefix+userDefinedSystemMessage))
 	}
 
-	for _, msg := range history {
+	for _, msg := range opts.History {
 		switch msg.Role {
 		case "system":
 			messages = append(messages, openai.SystemMessage(msg.Content))
@@ -43,10 +71,14 @@ func PromptAIWithSystemMessage(model, apiKey, prompt string, history []MessageHi
 		}
 	}
 
-	messages = append(messages, openai.UserMessage(prompt))
+	if opts.TurnSystemMessage != "" {
+		messages = append(messages, openai.SystemMessage(opts.TurnSystemMessage))
+	}
 
-	chatCompletion, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
-		Model:    model,
+	messages = append(messages, openai.UserMessage(opts.Prompt))
+
+	chatCompletion, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Model:    opts.Model,
 		Messages: messages,
 	})
 	if err != nil {
