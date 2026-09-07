@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 
-	"doman.sh/internal/config"
-	"doman.sh/internal/pkg"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/pkg"
 	"github.com/spf13/cobra"
 )
 

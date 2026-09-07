@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 
-	aliasCmd "doman.sh/cmd/alias"
-	"doman.sh/internal/config"
-	"doman.sh/internal/pkg/alias"
-	"doman.sh/internal/txt"
+	aliasCmd "doman.sh/doman/cmd/alias"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/pkg/alias"
+	"doman.sh/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 

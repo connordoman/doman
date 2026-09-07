@@ -24,10 +24,10 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X doman.sh/internal/config.Version={{.Version}}
-      - -X doman.sh/internal/config.CommitHash={{.Commit}}
-      - -X doman.sh/internal/config.BuildDate={{.Date}}
-      - -X doman.sh/internal/config.Build=release
+      - -X doman.sh/doman/internal/config.Version={{.Version}}
+      - -X doman.sh/doman/internal/config.CommitHash={{.Commit}}
+      - -X doman.sh/doman/internal/config.BuildDate={{.Date}}
+      - -X doman.sh/doman/internal/config.Build=release
 
 archives:
   - formats: [tar.gz]

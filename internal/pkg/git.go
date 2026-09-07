@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/txt"
 	"github.com/charmbracelet/lipgloss"
 )
 

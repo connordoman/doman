@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"doman.sh/internal/pkg/lipsum"
+	"doman.sh/doman/internal/pkg/lipsum"
 	"github.com/spf13/cobra"
 )
 
