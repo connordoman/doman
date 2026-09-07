@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"doman.sh/internal/txt"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/connordoman/doman/internal/txt"
 )
 
 type GitUser struct {

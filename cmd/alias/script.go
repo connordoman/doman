@@ -1,7 +1,7 @@
 package alias
 
 import (
-	"github.com/connordoman/doman/internal/pkg/alias"
+	"doman.sh/internal/pkg/alias"
 	"github.com/spf13/cobra"
 )
 

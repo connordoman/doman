@@ -3,10 +3,10 @@ package ask
 import (
 	"fmt"
 
+	"doman.sh/internal/config"
+	"doman.sh/internal/pkg"
+	"doman.sh/internal/txt"
 	"github.com/charmbracelet/huh"
-	"github.com/connordoman/doman/internal/config"
-	"github.com/connordoman/doman/internal/pkg"
-	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/viper"
 )
 

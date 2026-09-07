@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/connordoman/doman/cmd"
-	"github.com/connordoman/doman/internal/txt"
+	"doman.sh/cmd"
+	"doman.sh/internal/txt"
 )
 
 func main() {

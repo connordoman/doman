@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/connordoman/doman/internal/pkg"
-	"github.com/connordoman/doman/internal/txt"
-	"github.com/connordoman/doman/internal/web"
+	"doman.sh/internal/pkg"
+	"doman.sh/internal/txt"
+	"doman.sh/internal/web"
 	"github.com/spf13/cobra"
 )
 

@@ -3,7 +3,7 @@ package go_self
 import (
 	"strings"
 
-	"github.com/connordoman/doman/internal/pkg"
+	"doman.sh/internal/pkg"
 	"github.com/spf13/cobra"
 )
 
