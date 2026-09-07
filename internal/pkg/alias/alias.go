@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/connordoman/doman/internal/pkg"
+	"doman.sh/internal/pkg"
 )
 
 type Alias struct {

@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/connordoman/doman/internal/data/db"
+	"doman.sh/internal/data/db"
 	_ "modernc.org/sqlite"
 )
 

@@ -8,10 +8,10 @@ import (
 	"sort"
 	"time"
 
+	weatherCmd "doman.sh/cmd/weather"
+	"doman.sh/internal/pkg/weather"
+	"doman.sh/internal/txt"
 	"github.com/charmbracelet/lipgloss"
-	weatherCmd "github.com/connordoman/doman/cmd/weather"
-	"github.com/connordoman/doman/internal/pkg/weather"
-	"github.com/connordoman/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 

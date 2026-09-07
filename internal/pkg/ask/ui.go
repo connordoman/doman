@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/rand"
 
+	"doman.sh/internal/pkg"
+	"doman.sh/internal/txt"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/connordoman/doman/internal/pkg"
-	"github.com/connordoman/doman/internal/txt"
 	"github.com/connordoman/windy"
 )
 
