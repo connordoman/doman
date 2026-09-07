@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/connordoman/doman/internal/data"
-	"github.com/connordoman/doman/internal/txt"
+	"doman.sh/internal/data"
+	"doman.sh/internal/txt"
 	"github.com/spf13/cobra"
 )
 

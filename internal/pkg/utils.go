@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/connordoman/doman/internal/txt"
+	"doman.sh/internal/txt"
 )
 
 func PrintSuccess(format string, args ...any) {

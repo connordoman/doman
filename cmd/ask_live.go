@@ -5,9 +5,9 @@ import (
 	"log"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/connordoman/doman/internal/data"
-	"github.com/connordoman/doman/internal/pkg/ask"
-	"github.com/connordoman/doman/internal/txt"
+	"doman.sh/internal/data"
+	"doman.sh/internal/pkg/ask"
+	"doman.sh/internal/txt"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

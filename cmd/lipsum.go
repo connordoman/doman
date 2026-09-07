@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/connordoman/doman/internal/pkg/lipsum"
+	"doman.sh/internal/pkg/lipsum"
 	"github.com/spf13/cobra"
 )
 

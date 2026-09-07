@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/connordoman/doman/cmd/npm"
+	"doman.sh/cmd/npm"
 	"github.com/spf13/cobra"
 )
 
