@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"doman.sh/internal/config"
-	"doman.sh/internal/pkg"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/pkg"
 )
 
 const (

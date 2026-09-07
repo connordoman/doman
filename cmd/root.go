@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"doman.sh/cmd/completions"
-	go_self "doman.sh/cmd/go"
-	"doman.sh/internal/config"
-	"doman.sh/internal/pkg"
+	"doman.sh/doman/cmd/completions"
+	go_self "doman.sh/doman/cmd/go"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/pkg"
 	"github.com/spf13/cobra"
 )
 

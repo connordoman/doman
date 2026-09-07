@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	openmeteo "doman.sh/internal/pkg/weather/openmeteo"
+	openmeteo "doman.sh/doman/internal/pkg/weather/openmeteo"
 	flatbuffers "github.com/google/flatbuffers/go"
 )
 

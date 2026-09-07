@@ -3,9 +3,9 @@ package alias
 import (
 	"fmt"
 
-	"doman.sh/internal/config"
-	"doman.sh/internal/pkg"
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/config"
+	"doman.sh/doman/internal/pkg"
+	"doman.sh/doman/internal/txt"
 )
 
 func PrintReloadWarning() {

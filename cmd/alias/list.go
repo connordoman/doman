@@ -3,7 +3,7 @@ package alias
 import (
 	"fmt"
 
-	"doman.sh/internal/pkg/alias"
+	"doman.sh/doman/internal/pkg/alias"
 	"github.com/spf13/cobra"
 )
 

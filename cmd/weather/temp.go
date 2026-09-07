@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"doman.sh/internal/pkg/weather"
-	"doman.sh/internal/txt"
+	"doman.sh/doman/internal/pkg/weather"
+	"doman.sh/doman/internal/txt"
 	"github.com/spf13/cobra"
 )
 

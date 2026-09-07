@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"doman.sh/internal/pkg"
+	"doman.sh/doman/internal/pkg"
 	"github.com/spf13/cobra"
 )
 

@@ -1,4 +1,4 @@
-module doman.sh
+module doman.sh/doman
 
 go 1.25.0
 
