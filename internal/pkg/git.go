@@ -231,6 +231,7 @@ type GitHubPRSimple struct {
 	Title  string `json:"title"`
 	State  string `json:"state"`
 	Base   string `json:"baseRefName"`
+	Head   string `json:"headRefName"`
 }
 
 const (
@@ -243,7 +244,7 @@ func (p GitHubPRSimple) String() string {
 	return fmt.Sprintf("#%d %s %s %s", p.Number, p.Title, txt.Greyf("→"), p.Base)
 }
 
-func (p GitHubPRSimple) ColorizedString() string {
+func (p GitHubPRSimple) ColorizedString(reversed bool) string {
 	var style lipgloss.Style
 	var titleStyle = lipgloss.NewStyle()
 	switch p.State {
@@ -257,14 +258,30 @@ func (p GitHubPRSimple) ColorizedString() string {
 	}
 
 	number := style.Render(fmt.Sprintf("#%d", p.Number))
-	base := RenderGitBranch(p.Base)
+	branch := p.Base
+	if reversed {
+		branch = p.Head
+	}
+	branchToDisplay := RenderGitBranch(branch)
 	title := titleStyle.Render(p.Title)
 
-	return fmt.Sprintf("%s %s %s %s", number, title, txt.Greyf("→"), base)
+	arrow := "→"
+	arrow = txt.Greyf("%s", arrow)
+
+	params := []string{}
+	if reversed {
+		params = append(params, branchToDisplay, arrow)
+	}
+	params = append(params, number, title)
+	if !reversed {
+		params = append(params, arrow, branchToDisplay)
+	}
+
+	return fmt.Sprintf("%s", strings.Join(params, " "))
 }
 
 func GetPRListForBranch(branch string) ([]GitHubPRSimple, error) {
-	prs, err := RunCommand(GitHubCLICmd, "pr", "list", "--state=all", "--json=number,title,state,baseRefName", "--head", branch)
+	prs, err := RunCommand(GitHubCLICmd, "pr", "list", "--state=all", "--json=number,title,state,baseRefName,headRefName", "--head", branch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR list for branch: %w", err)
 	}
@@ -272,6 +289,20 @@ func GetPRListForBranch(branch string) ([]GitHubPRSimple, error) {
 	var prsResponse []GitHubPRSimple
 	if err := json.Unmarshal([]byte(prs), &prsResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal PR list: %w", err)
+	}
+
+	return prsResponse, nil
+}
+
+func GetPRListIntoBranch(branch string) ([]GitHubPRSimple, error) {
+	prs, err := RunCommand(GitHubCLICmd, "pr", "list", "--state=all", "--json=number,title,state,baseRefName,headRefName", "--base", branch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get base PR list for branch: %w", err)
+	}
+
+	var prsResponse []GitHubPRSimple
+	if err := json.Unmarshal([]byte(prs), &prsResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal base PR list: %w", err)
 	}
 
 	return prsResponse, nil
