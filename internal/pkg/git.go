@@ -274,7 +274,7 @@ func (p GitHubPRSimple) ColorizedString(reversed bool) string {
 	}
 	params = append(params, number, title)
 	if !reversed {
-		params = append(params, branchToDisplay, arrow)
+		params = append(params, arrow, branchToDisplay)
 	}
 
 	return fmt.Sprintf("%s", strings.Join(params, " "))
