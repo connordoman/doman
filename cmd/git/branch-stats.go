@@ -73,12 +73,22 @@ func runBranchStatsCommand(cmd *cobra.Command, args []string) error {
 	fmt.Println(txt.Greyf("Last Commit:"), branchTimestamp.Format("Jan 02, 2006 15:04:05 MST"))
 
 	var prs []pkg.GitHubPRSimple
+	var basePRs []pkg.GitHubPRSimple
 	var prListErr error
 
 	if pkg.CheckGitHubCLIInstalled() {
 		prListErr = spinner.New().Title("Checking for PRs").Style(lipgloss.NewStyle().Foreground(lipgloss.Color("#2563eb"))).ActionWithErr(func(ctx context.Context) error {
 			prs, err = pkg.GetPRListForBranch(branch)
-			return err
+			if err != nil {
+				return err
+			}
+
+			basePRs, err = pkg.GetPRListIntoBranch(branch)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		}).Run()
 	}
 
@@ -88,13 +98,25 @@ func runBranchStatsCommand(cmd *cobra.Command, args []string) error {
 		} else {
 			return fmt.Errorf("failed to get PR list for branch: %w", err)
 		}
-	} else if len(prs) > 0 {
-		fmt.Println(txt.Greyf("PRs:"))
-		for _, pr := range prs {
-			fmt.Println("  -", pr.ColorizedString())
+	} else if len(prs) > 0 || len(basePRs) > 0 {
+
+		fmt.Println(txt.Greyf("PRs from this branch:"))
+		if len(prs) > 0 {
+			for _, pr := range prs {
+				fmt.Println("  -", pr.ColorizedString(false))
+			}
+		} else {
+			fmt.Println("  None")
 		}
-	} else {
-		fmt.Println(txt.Greyf("No PRs"))
+
+		fmt.Println(txt.Greyf("PRs into this branch:"))
+		if len(basePRs) > 0 {
+			for _, basePR := range basePRs {
+				fmt.Println("  -", basePR.ColorizedString(true))
+			}
+		} else {
+			fmt.Println("  None")
+		}
 	}
 	return nil
 }
