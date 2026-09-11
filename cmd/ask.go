@@ -13,7 +13,6 @@ import (
 	"doman.sh/doman/internal/pkg/ask"
 	"doman.sh/doman/internal/pkg/timer"
 	"doman.sh/doman/internal/txt"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/connordoman/windy"
 	"github.com/google/uuid"
@@ -29,8 +28,12 @@ var askSetup = &ask.Setup{
 }
 
 var AskCommand = &cobra.Command{
-	Use:               "ask [prompt]",
-	Short:             "Ask a question to the configured AI service",
+	Use:   "ask [prompt]",
+	Short: "Ask a question to the configured AI service",
+	Long: `Ask a question to the configured AI service.
+
+Run with no prompt to open a live, full screen chat (same as 'doman ask
+live'). Pass a prompt to ask a single one-off question instead.`,
 	RunE:              runAsk,
 	PersistentPreRunE: initAskDB,
 	PersistentPostRun: closeAskDB,
@@ -83,6 +86,12 @@ func runAsk(cmd *cobra.Command, args []string) error {
 		} else {
 			return nil
 		}
+	}
+
+	// With no prompt given on the command line, default to the live chat UI
+	// (same as 'doman ask live') instead of a single-shot question.
+	if len(args) == 0 {
+		return runAskLiveCommand(cmd, args)
 	}
 
 	// Handle --continue flag
@@ -142,32 +151,7 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	}
 
 	// run normal ask command
-	prompt := ""
-	if len(args) > 0 {
-		prompt = strings.TrimSpace(strings.Join(args, " "))
-	} else {
-		inputTitle := "Enter your question:"
-		if quick {
-			inputTitle = "Enter your quick question:"
-		}
-		if shouldContinue {
-			title := conversation.Title
-			if !ask.IsMeaningfulTitle(title) {
-				title = conversation.ID
-			}
-			inputTitle = fmt.Sprintf(`Follow up on "%s"`, title)
-		}
-
-		err := huh.NewText().
-			Title(inputTitle).
-			Value(&prompt).
-			Run()
-		if err != nil {
-			return fmt.Errorf("failed to get user input: %w", err)
-		}
-
-		prompt = strings.TrimSpace(prompt)
-	}
+	prompt := strings.TrimSpace(strings.Join(args, " "))
 
 	if prompt == "" {
 		return fmt.Errorf("prompt cannot be empty")
