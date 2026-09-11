@@ -130,8 +130,13 @@ func NewLiveChatModel(cfg LiveChatConfig) LiveChatModel {
 	input.KeyMap.PageDown = key.NewBinding()
 
 	styles := input.Styles()
-	styles.Focused.Placeholder = styles.Focused.Placeholder.Foreground(liveColor(windy.Neutral500))
-	styles.Cursor.Color = liveColor(windy.Blue400)
+	styles.Focused.Placeholder = styles.Focused.Placeholder.Foreground(windy.Neutral500.Glossy()).UnsetBackground()
+	styles.Focused.CursorLine = styles.Focused.CursorLine.UnsetBackground()
+	styles.Focused.Base = styles.Focused.Base.UnsetBackground()
+	styles.Focused.Text = styles.Focused.Text.UnsetBackground()
+	styles.Blurred.Base = styles.Blurred.Base.UnsetBackground()
+	styles.Blurred.Text = styles.Blurred.Text.UnsetBackground()
+	styles.Cursor.Color = windy.Blue400.Glossy()
 	input.SetStyles(styles)
 
 	vp := viewport.New()
@@ -146,7 +151,7 @@ func NewLiveChatModel(cfg LiveChatConfig) LiveChatModel {
 
 	sp := spinner.New(
 		spinner.WithSpinner(spinner.MiniDot),
-		spinner.WithStyle(lipgloss.NewStyle().Foreground(liveColor(windy.Blue500))),
+		spinner.WithStyle(lipgloss.NewStyle().Foreground(windy.Blue500.Glossy())),
 	)
 
 	messages := make([]LiveMessage, len(cfg.History))

@@ -143,14 +143,26 @@ func (m LiveChatModel) headerView() string {
 		title = shortConversationID(m.cfg.ConversationID)
 	}
 
-	left := lipgloss.NewStyle().Bold(true).Foreground(liveColor(windy.Blue400)).Render("doman ask") +
-		lipgloss.NewStyle().Foreground(liveColor(windy.Neutral500)).Render(liveSeparator+title)
+	_, isQuick := ParseQuickCommand(m.input.Value())
 
-	meta := []string{m.cfg.Model}
+	brandColor := windy.Blue500
+	if isQuick {
+		brandColor = windy.Amber500
+	}
+
+	left := lipgloss.NewStyle().Bold(true).Foreground(brandColor.Glossy()).Render("doman ask") +
+		lipgloss.NewStyle().Foreground(windy.Neutral500.Glossy()).Render(liveSeparator+title)
+
+	headerModel := m.cfg.Model
+	if isQuick {
+		headerModel = m.quickModel()
+	}
+
+	meta := []string{headerModel}
 	if m.totalCost > 0 {
 		meta = append(meta, fmt.Sprintf("$%.5f", m.totalCost))
 	}
-	right := lipgloss.NewStyle().Foreground(liveColor(windy.Neutral500)).Render(strings.Join(meta, liveSeparator))
+	right := lipgloss.NewStyle().Foreground(windy.Neutral500.Glossy()).Render(strings.Join(meta, liveSeparator))
 
 	width := m.contentWidth()
 	gutter := lipgloss.NewStyle().PaddingLeft(1)
