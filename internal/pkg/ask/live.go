@@ -59,6 +59,9 @@ type LiveMessage struct {
 	Model   string
 	Cost    float64
 	Elapsed time.Duration
+	// Partial marks an answer that was cut short by a cancel or an error. It
+	// stays on screen but is neither saved nor sent back to the model.
+	Partial bool
 }
 
 // LiveChatConfig carries everything the chat needs from the command layer.
@@ -80,6 +83,10 @@ type LiveChatConfig struct {
 
 	// Store persists new turns. A nil store keeps the chat in memory only.
 	Store LiveStore
+
+	// Session carries turns to the API. When nil the chat opens its own; the
+	// caller should Close the chat either way once the program exits.
+	Session *Session
 }
 
 type LiveChatModel struct {
@@ -95,6 +102,9 @@ type LiveChatModel struct {
 	ready  bool
 
 	renderedWidth int
+	// committedContent is the rendered transcript without the answer that is
+	// still streaming, so each streamed delta re-renders only that answer.
+	committedContent string
 
 	// transcriptLines is the rendered transcript split into lines, kept so a
 	// mouse selection can be mapped back to the text under it.
@@ -105,6 +115,7 @@ type LiveChatModel struct {
 	flashID   int
 
 	waiting   bool
+	streaming string
 	splash    string
 	startedAt time.Time
 	cancel    context.CancelFunc
@@ -165,6 +176,10 @@ func NewLiveChatModel(cfg LiveChatConfig) LiveChatModel {
 	messages := make([]LiveMessage, len(cfg.History))
 	copy(messages, cfg.History)
 
+	if cfg.Session == nil {
+		cfg.Session = NewSession(cfg.APIKey)
+	}
+
 	return LiveChatModel{
 		cfg:      cfg,
 		messages: messages,
@@ -194,6 +209,13 @@ func (m LiveChatModel) Title() string { return m.title }
 
 // TotalCost reports the accumulated cost of every priced turn in the session.
 func (m LiveChatModel) TotalCost() float64 { return m.totalCost }
+
+// Close releases the API connection.
+func (m LiveChatModel) Close() {
+	if m.cfg.Session != nil {
+		m.cfg.Session.Close()
+	}
+}
 
 func (m LiveChatModel) Init() tea.Cmd {
 	return textarea.Blink
@@ -246,6 +268,7 @@ func (m LiveChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cancel != nil {
 				m.cancel()
 			}
+			m.Close()
 			return m, tea.Quit
 		case "esc":
 			if m.waiting {
@@ -261,6 +284,22 @@ func (m LiveChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+	case liveDeltaMsg:
+		if msg.id != m.requestID {
+			// A cancelled or superseded request; stop reading it.
+			return m, nil
+		}
+
+		atBottom := m.viewport.AtBottom()
+		m.streaming += msg.delta
+		m.refreshStreaming(atBottom)
+
+		if msg.next != nil {
+			next := msg.next
+			return m, func() tea.Msg { return next }
+		}
+		return m, waitForStream(msg.ch)
+
 	case liveResponseMsg:
 		if msg.id != m.requestID {
 			// A cancelled or superseded request; drop it.
@@ -273,7 +312,11 @@ func (m LiveChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cancel = nil
 		}
 
+		partial := m.streaming
+		m.streaming = ""
+
 		if msg.err != nil {
+			m.keepPartial(partial, msg.model, msg.quick)
 			m.append(LiveMessage{Role: LiveRoleError, Content: msg.err.Error()})
 			m.rebuildTranscript(true)
 			m.layout()
@@ -289,6 +332,9 @@ func (m LiveChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Cost:    msg.cost,
 			Elapsed: msg.elapsed,
 		})
+		if msg.incomplete != "" {
+			m.append(LiveMessage{Role: LiveRoleNotice, Content: fmt.Sprintf("The answer stopped early (%s).", msg.incomplete)})
+		}
 		m.rebuildTranscript(true)
 		m.layout()
 
@@ -404,18 +450,20 @@ func (m *LiveChatModel) submit() tea.Cmd {
 	m.cancel = cancel
 	m.requestID++
 	m.waiting = true
+	m.streaming = ""
 	m.splash = RandomSplashText()
 	m.startedAt = time.Now()
 
 	return tea.Batch(
 		m.spinner.Tick,
-		askCmd(ctx, m.requestID, PromptOptions{
+		streamCmd(ctx, m.cfg.Session, m.requestID, PromptOptions{
 			Model:             model,
 			APIKey:            m.cfg.APIKey,
 			Prompt:            prompt,
 			History:           m.apiHistory(),
 			SystemMessage:     LiveSystemMessage,
 			TurnSystemMessage: quickTurnSystemMessage(quick),
+			Settings:          LoadResponseSettings(quick),
 		}, quick),
 	)
 }
@@ -429,12 +477,31 @@ func (m *LiveChatModel) cancelRequest() {
 	// Bump the id so the in-flight response is ignored when it lands.
 	m.requestID++
 	m.waiting = false
+
+	model := m.cfg.Model
+	quick := false
+	if n := len(m.messages); n > 0 && m.messages[n-1].Quick {
+		model, quick = m.quickModel(), true
+	}
+	m.keepPartial(m.streaming, model, quick)
+	m.streaming = ""
+
 	m.append(LiveMessage{Role: LiveRoleNotice, Content: "Request cancelled."})
 	m.rebuildTranscript(true)
 }
 
 func (m *LiveChatModel) append(msg LiveMessage) {
 	m.messages = append(m.messages, msg)
+}
+
+// keepPartial leaves an interrupted answer on screen so the text the user was
+// reading does not vanish.
+func (m *LiveChatModel) keepPartial(content, model string, quick bool) {
+	content = NormalizeContent(content)
+	if content == "" {
+		return
+	}
+	m.append(LiveMessage{Role: LiveRoleAssistant, Content: content, Model: model, Quick: quick, Partial: true})
 }
 
 func (m *LiveChatModel) save(role, content string) error {
@@ -463,6 +530,9 @@ func (m LiveChatModel) quickModel() string {
 func (m LiveChatModel) apiHistory() []MessageHistory {
 	history := make([]MessageHistory, 0, len(m.messages))
 	for _, msg := range m.messages {
+		if msg.Partial {
+			continue
+		}
 		switch msg.Role {
 		case LiveRoleUser, LiveRoleAssistant:
 			history = append(history, MessageHistory{Role: msg.Role, Content: msg.Content})
@@ -539,7 +609,29 @@ func (m *LiveChatModel) rebuildTranscript(toBottom bool) {
 	}
 	m.renderedWidth = width
 
-	content := m.renderTranscript(width)
+	m.committedContent = m.renderTranscript(width)
+	m.setTranscript(toBottom)
+}
+
+// refreshStreaming re-renders only the answer that is still arriving, on top
+// of the cached transcript.
+func (m *LiveChatModel) refreshStreaming(toBottom bool) {
+	if !m.ready {
+		return
+	}
+	if m.contentWidth() != m.renderedWidth {
+		m.rebuildTranscript(toBottom)
+		return
+	}
+	m.setTranscript(toBottom)
+}
+
+func (m *LiveChatModel) setTranscript(toBottom bool) {
+	content := m.committedContent
+	if m.streaming != "" {
+		content += "\n" + m.renderStreamingMessage(m.renderedWidth)
+	}
+
 	m.transcriptLines = strings.Split(content, "\n")
 	m.viewport.SetContent(content)
 
@@ -553,34 +645,76 @@ func (m LiveChatModel) contentWidth() int {
 	return max(m.width-2, 1)
 }
 
-func askCmd(ctx context.Context, id int, opts PromptOptions, quick bool) tea.Cmd {
-	return func() tea.Msg {
+// streamCmd runs one turn in the background. Deltas and the final result come
+// back through a channel that waitForStream reads, one message at a time.
+func streamCmd(ctx context.Context, session *Session, id int, opts PromptOptions, quick bool) tea.Cmd {
+	ch := make(chan tea.Msg, 256)
+
+	send := func(msg tea.Msg) bool {
+		select {
+		case ch <- msg:
+			return true
+		case <-ctx.Done():
+			// Nobody reads a cancelled request's channel; do not block on it.
+			return false
+		}
+	}
+
+	go func() {
+		defer close(ch)
 		started := time.Now()
 
-		completion, err := PromptAIWithOptions(ctx, opts)
-		if err != nil {
-			if ctx.Err() != nil {
-				// Cancelled by the user; the id check drops this anyway.
-				return liveResponseMsg{id: id, err: ctx.Err()}
+		result, err := session.Stream(ctx, opts, func(delta string) {
+			send(liveDeltaMsg{id: id, delta: delta, ch: ch})
+		})
+
+		msg := liveResponseMsg{id: id, prompt: opts.Prompt, model: opts.Model, quick: quick, elapsed: time.Since(started)}
+		switch {
+		case err != nil:
+			msg.err = err
+		case NormalizeContent(result.Content) == "":
+			msg.err = fmt.Errorf("received an empty response from %s", opts.Model)
+		default:
+			msg.content = NormalizeContent(result.Content)
+			msg.cost, _ = CalculateCost(opts.Model, result.Usage)
+			msg.incomplete = result.Incomplete
+		}
+		send(msg)
+	}()
+
+	return waitForStream(ch)
+}
+
+// waitForStream returns the next message from a turn, merging any deltas that
+// are already queued so a fast stream re-renders once per batch rather than
+// once per token.
+func waitForStream(ch chan tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		msg, ok := <-ch
+		if !ok {
+			return nil
+		}
+
+		delta, isDelta := msg.(liveDeltaMsg)
+		if !isDelta {
+			return msg
+		}
+
+		for {
+			select {
+			case next, ok := <-ch:
+				if !ok {
+					return delta
+				}
+				more, isDelta := next.(liveDeltaMsg)
+				if !isDelta {
+					delta.next = next
+					return delta
+				}
+				delta.delta += more.delta
+			default:
+				return delta
 			}
-			return liveResponseMsg{id: id, prompt: opts.Prompt, quick: quick, err: err, elapsed: time.Since(started)}
-		}
-
-		content, err := CollectRawResponse(completion.Choices)
-		if err != nil {
-			return liveResponseMsg{id: id, prompt: opts.Prompt, quick: quick, err: err, elapsed: time.Since(started)}
-		}
-
-		cost, _ := CalculateCost(opts.Model, completion)
-
-		return liveResponseMsg{
-			id:      id,
-			prompt:  opts.Prompt,
-			content: content,
-			model:   opts.Model,
-			quick:   quick,
-			cost:    cost,
-			elapsed: time.Since(started),
 		}
 	}
 }
@@ -606,14 +740,24 @@ func (m LiveChatModel) generateTitleCmd(prompt string) tea.Cmd {
 }
 
 type liveResponseMsg struct {
-	id      int
-	prompt  string
-	content string
-	model   string
-	quick   bool
-	cost    float64
-	elapsed time.Duration
-	err     error
+	id         int
+	prompt     string
+	content    string
+	model      string
+	quick      bool
+	cost       float64
+	elapsed    time.Duration
+	incomplete string
+	err        error
+}
+
+// liveDeltaMsg carries streamed text. next holds a message that arrived while
+// deltas were being merged and must be handled right after this one.
+type liveDeltaMsg struct {
+	id    int
+	delta string
+	ch    chan tea.Msg
+	next  tea.Msg
 }
 
 type liveTitleMsg struct {

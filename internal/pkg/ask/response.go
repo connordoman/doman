@@ -6,7 +6,6 @@ import (
 
 	"doman.sh/doman/internal/pkg"
 	"github.com/charmbracelet/glamour"
-	openai "github.com/openai/openai-go"
 	"github.com/spf13/viper"
 )
 
@@ -65,67 +64,9 @@ func RenderMarkdown(content string, raw bool, wrapWidth int) (string, error) {
 	return formatted, nil
 }
 
-func CollectResponse(choices []openai.ChatCompletionChoice, raw bool, wrapWidth int) (string, error) {
-	var result string
-
-	if len(choices) == 0 {
-		return "", fmt.Errorf("no choices returned from AI response")
-	}
-
-	var renderer *glamour.TermRenderer
-	if !raw {
-		r, err := NewMarkdownRenderer(wrapWidth)
-		if err != nil {
-			return "", fmt.Errorf("failed to create Markdown renderer: %w", err)
-		}
-		renderer = r
-	}
-
-	for i, choice := range choices {
-		content := choice.Message.Content
-		if content == "" {
-			return "", fmt.Errorf("received empty content from AI response (choice %d, finish_reason: %s)", i, choice.FinishReason)
-		}
-
-		content = normalizeContent(content)
-
-		if raw {
-			result += content
-		} else {
-			formatted, err := renderer.Render(content)
-			if err != nil {
-				return "", fmt.Errorf("failed to render response: %w", err)
-			}
-
-			result += formatted
-		}
-	}
-
-	if raw {
-		result += "\n"
-	}
-
-	return result, nil
-}
-
-// CollectRawResponse joins the raw Markdown of every choice without rendering
-// it, so callers can store the model output and render it later.
-func CollectRawResponse(choices []openai.ChatCompletionChoice) (string, error) {
-	if len(choices) == 0 {
-		return "", fmt.Errorf("no choices returned from AI response")
-	}
-
-	parts := make([]string, 0, len(choices))
-	for i, choice := range choices {
-		content := choice.Message.Content
-		if content == "" {
-			return "", fmt.Errorf("received empty content from AI response (choice %d, finish_reason: %s)", i, choice.FinishReason)
-		}
-
-		parts = append(parts, normalizeContent(content))
-	}
-
-	return strings.Join(parts, "\n\n"), nil
+// NormalizeContent tidies model output before it is stored or rendered.
+func NormalizeContent(content string) string {
+	return normalizeContent(content)
 }
 
 func normalizeContent(content string) string {

@@ -1,21 +1,22 @@
 package ask
 
 import (
-	openai "github.com/openai/openai-go"
+	"github.com/openai/openai-go/v3/responses"
 )
 
-func CalculateCost(model string, completion *openai.ChatCompletion) (float64, bool) {
+// CalculateCost prices a turn from its usage. It reports false for models
+// missing from CostTable.
+func CalculateCost(model string, usage responses.ResponseUsage) (float64, bool) {
 	pricing, exists := CostTable[model]
 	if !exists {
 		return 0, false
 	}
 
+	inputTokens := float64(usage.InputTokens)
+	cachedTokens := float64(usage.InputTokensDetails.CachedTokens)
+	outputTokens := float64(usage.OutputTokens)
+
 	var totalCost float64
-
-	inputTokens := float64(completion.Usage.PromptTokens)
-	cachedTokens := float64(completion.Usage.PromptTokensDetails.CachedTokens)
-	outputTokens := float64(completion.Usage.CompletionTokens)
-
 	totalCost += (inputTokens - cachedTokens) * pricing.InputCost
 	totalCost += cachedTokens * pricing.CachedInputCost
 	totalCost += outputTokens * pricing.OutputCost
