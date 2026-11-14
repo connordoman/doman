@@ -59,8 +59,20 @@ func InitConfig() error {
 	viper.SetEnvPrefix("DOMAN")
 
 	viper.SetDefault("ask.default_service", "openai")
-	viper.SetDefault("ask.openai.default_model", "gpt-4o-mini")
+	viper.SetDefault("ask.openai.default_model", "gpt-6.1-sol")
 	viper.SetDefault("ask.openai.quick_model", "gpt-5-mini")
+
+	// Responses API request options, matching OpenAI's response builder.
+	viper.SetDefault("ask.openai.responses.service_tier", "default")
+	viper.SetDefault("ask.openai.responses.verbosity", "medium")
+	viper.SetDefault("ask.openai.responses.reasoning.effort", "medium")
+	viper.SetDefault("ask.openai.responses.reasoning.mode", "standard")
+	viper.SetDefault("ask.openai.responses.reasoning.summary", "concise")
+	viper.SetDefault("ask.openai.responses.store", false)
+	viper.SetDefault("ask.openai.responses.include", []string{
+		"reasoning.encrypted_content",
+		"web_search_call.action.sources",
+	})
 	viper.SetDefault("ask.preferred_languages", []string{})
 
 	viper.BindEnv("ask.openai.api_key", "OPENAI_API_KEY")

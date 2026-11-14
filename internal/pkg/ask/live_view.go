@@ -48,6 +48,29 @@ func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *glamo
 	}
 }
 
+// renderStreamingMessage renders the answer that is still arriving. It builds
+// its own renderer because it runs once per batch of deltas, apart from the
+// full transcript pass.
+func (m LiveChatModel) renderStreamingMessage(width int) string {
+	var renderer *glamour.TermRenderer
+	if !m.cfg.Raw {
+		renderer, _ = NewMarkdownRenderer(max(width-2, 20))
+	}
+
+	model := m.cfg.Model
+	quick := false
+	if n := len(m.messages); n > 0 && m.messages[n-1].Quick {
+		model, quick = m.quickModel(), true
+	}
+
+	return m.renderAssistantMessage(LiveMessage{
+		Role:    LiveRoleAssistant,
+		Content: m.streaming,
+		Model:   model,
+		Quick:   quick,
+	}, width, renderer)
+}
+
 func (m LiveChatModel) renderUserMessage(msg LiveMessage, width int) string {
 	accent := windy.Blue400
 	label := "You"
@@ -96,6 +119,9 @@ func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, render
 	}
 	if msg.Quick {
 		meta = append(meta, "quick")
+	}
+	if msg.Partial {
+		meta = append(meta, "interrupted")
 	}
 
 	footer := lipgloss.NewStyle().
@@ -190,6 +216,13 @@ func (m LiveChatModel) statusView() string {
 			Render(status)
 	}
 
+	if m.flashText != "" {
+		return padding.
+			Foreground(liveColor(windy.Green400)).
+			MaxWidth(m.width).
+			Render("✓ " + m.flashText)
+	}
+
 	hint := "Ready" + liveSeparator + QuickCommand + " anywhere in a message for a fast answer"
 	return padding.
 		Foreground(liveColor(windy.Neutral600)).
@@ -218,6 +251,7 @@ func (m LiveChatModel) helpView() string {
 		"enter send",
 		"alt+enter newline",
 		"pgup/pgdn scroll",
+		"drag to copy",
 	}
 	if m.waiting {
 		keys = append(keys, "esc cancel")

@@ -32,6 +32,21 @@ var CostTable = map[string]ModelPricing{
 		CachedInputCost: 0.125,
 		OutputCost:      10.000,
 	},
+	"gpt-6.1-sol": {
+		InputCost:       2.00,
+		CachedInputCost: 0.10,
+		OutputCost:      10.00,
+	},
+	"gpt-6.1-terra": {
+		InputCost:       1.00,
+		CachedInputCost: 0.05,
+		OutputCost:      5.00,
+	},
+	"gpt-6-luna": {
+		InputCost:       0.10,
+		CachedInputCost: 0.01,
+		OutputCost:      0.50,
+	},
 }
 
 var SplashTexts = []string{

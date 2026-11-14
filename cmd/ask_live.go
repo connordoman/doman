@@ -25,7 +25,7 @@ message answered quickly by the smaller model.`,
 }
 
 func init() {
-	AskLiveCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-4o-mini)")
+	AskLiveCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-6.1-sol)")
 	AskLiveCommand.Flags().String("quick-model", "", "Model used for /quick messages (default: gpt-5-mini)")
 	AskLiveCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
 	AskLiveCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
@@ -125,6 +125,9 @@ func runAskLiveCommand(cmd *cobra.Command, args []string) error {
 		cfg.Title = conversation.Title
 	}
 
+	cfg.Session = ask.NewSession(apiKey)
+	defer cfg.Session.Close()
+
 	final, err := tea.NewProgram(ask.NewLiveChatModel(cfg)).Run()
 	if err != nil {
 		return err
@@ -204,7 +207,8 @@ func printLiveSummary(final tea.Model, conversationID string) {
 	if cost > 0 {
 		summary += fmt.Sprintf(" • $%.5f", cost)
 	}
-	summary += fmt.Sprintf(" • resume with: doman ask live -c --id %s", conversationID[:8])
+	command := txt.Greyf("%s", txt.Greyf("doman ask live -c --id %s", conversationID[:8]))
+	summary += fmt.Sprintf(" • resume with: %s", command)
 
 	fmt.Printf("%s %s\n", txt.Bluef("ChatGPT"), txt.Greyf("%s", summary))
 }
