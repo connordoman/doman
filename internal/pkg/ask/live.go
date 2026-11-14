@@ -96,6 +96,14 @@ type LiveChatModel struct {
 
 	renderedWidth int
 
+	// transcriptLines is the rendered transcript split into lines, kept so a
+	// mouse selection can be mapped back to the text under it.
+	transcriptLines []string
+	selection       liveSelection
+
+	flashText string
+	flashID   int
+
 	waiting   bool
 	splash    string
 	startedAt time.Time
@@ -203,7 +211,36 @@ func (m LiveChatModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.layout()
 		return m, nil
 
+	case tea.MouseMsg:
+		if cmd, handled := m.handleMouse(msg); handled {
+			return m, cmd
+		}
+
+	case liveAutoScrollMsg:
+		return m, m.handleAutoScroll()
+
+	case liveFlashExpiredMsg:
+		if msg.id == m.flashID {
+			m.flashText = ""
+		}
+		return m, nil
+
 	case tea.KeyPressMsg:
+		// Any key dismisses a selection, except ctrl+c, which copies it
+		// instead of quitting.
+		if m.selection.active && !m.selection.dragging {
+			var cmd tea.Cmd
+			if msg.String() == "ctrl+c" {
+				cmd = m.copySelection()
+			}
+			m.selection = liveSelection{}
+
+			switch msg.String() {
+			case "ctrl+c", "esc":
+				return m, cmd
+			}
+		}
+
 		switch msg.String() {
 		case "ctrl+c":
 			if m.cancel != nil {
@@ -316,7 +353,7 @@ func (m LiveChatModel) View() tea.View {
 
 	sections := []string{
 		m.headerView(),
-		gutter.Render(m.viewport.View()),
+		gutter.Render(m.highlightSelection(m.viewport.View(), m.viewport.YOffset())),
 		m.statusView(),
 		gutter.Render(m.inputView()),
 		m.helpView(),
@@ -495,8 +532,16 @@ func (m *LiveChatModel) rebuildTranscript(toBottom bool) {
 	}
 
 	width := m.contentWidth()
+	if width != m.renderedWidth {
+		// Reflowing moves every line, so the selection no longer points at
+		// the text it was made over.
+		m.selection = liveSelection{}
+	}
 	m.renderedWidth = width
-	m.viewport.SetContent(m.renderTranscript(width))
+
+	content := m.renderTranscript(width)
+	m.transcriptLines = strings.Split(content, "\n")
+	m.viewport.SetContent(content)
 
 	if toBottom {
 		m.viewport.GotoBottom()

@@ -190,6 +190,13 @@ func (m LiveChatModel) statusView() string {
 			Render(status)
 	}
 
+	if m.flashText != "" {
+		return padding.
+			Foreground(liveColor(windy.Green400)).
+			MaxWidth(m.width).
+			Render("✓ " + m.flashText)
+	}
+
 	hint := "Ready" + liveSeparator + QuickCommand + " anywhere in a message for a fast answer"
 	return padding.
 		Foreground(liveColor(windy.Neutral600)).
@@ -218,6 +225,7 @@ func (m LiveChatModel) helpView() string {
 		"enter send",
 		"alt+enter newline",
 		"pgup/pgdn scroll",
+		"drag to copy",
 	}
 	if m.waiting {
 		keys = append(keys, "esc cancel")
