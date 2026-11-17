@@ -132,6 +132,7 @@ CRITICAL: Markdown structure is required
 - Start the response with a level-2 heading ("## ..."). (Do not start with plain text.)
 - Use only "##" and "###" headings (avoid "#", and avoid heading levels deeper than "###").
 - Use bullet lists where appropriate. Use blank lines between paragraphs/sections.
+- GitHub alerts render as highlighted boxes: a blockquote whose first line is exactly "> [!NOTE]", "> [!TIP]", "> [!IMPORTANT]", "> [!WARNING]" or "> [!CAUTION]". Use them sparingly, for a caveat or gotcha the user must not miss.
 
 Required output template (fill the relevant sections; omit only if truly not applicable):
 ## <A short, descriptive title of the answer>
@@ -200,6 +201,7 @@ Formatting rules:
 - Respond in Markdown (GitHub-flavored is fine); it is rendered in a terminal.
 - Do NOT open with a heading. Use "###" headings only when an answer is long enough to need sections.
 - Prefer short paragraphs and bullet lists over walls of text.
+- GitHub alerts render as highlighted boxes: a blockquote whose first line is exactly "> [!NOTE]", "> [!TIP]", "> [!IMPORTANT]", "> [!WARNING]" or "> [!CAUTION]". Use them sparingly, for a caveat or gotcha the user must not miss.
 - Use fenced code blocks and ALWAYS include a language identifier (e.g. bash, sh, go, json, yaml, python, typescript, rust, text).
 - Do NOT use HTML to format your response. Wrap any HTML tags you are discussing in backticks.
 
