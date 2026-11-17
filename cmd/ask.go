@@ -22,7 +22,7 @@ import (
 
 var askSetup = &ask.Setup{
 	Service:    "openai",
-	Model:      "gpt-4o-mini",
+	Model:      "gpt-6.1-sol",
 	QuickModel: "gpt-5-mini",
 	ApiKey:     "",
 }
@@ -41,7 +41,7 @@ live'). Pass a prompt to ask a single one-off question instead.`,
 
 func init() {
 	AskCommand.Flags().BoolP("setup", "s", false, "Setup AI service configuration")
-	AskCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-4o-mini)")
+	AskCommand.Flags().StringP("model", "m", "", "Model to use for the AI service (default: gpt-6.1-sol)")
 	AskCommand.Flags().StringP("api-key", "A", "", "API Key for the AI service (default: read from environment variable OPENAI_API_KEY)")
 	AskCommand.Flags().BoolP("verbose", "v", false, "Enable verbose output")
 	AskCommand.Flags().BoolP("raw", "R", false, "Enable raw output (disable Markdown formatting)")
@@ -272,7 +272,10 @@ func runAsk(cmd *cobra.Command, args []string) error {
 	timer := timer.NewStopwatch(true)
 
 	var response string
+	var content string
 	var pricing string
+	var incomplete string
+	streamed := false
 
 	if !dryRun {
 		systemMessage := ask.DeveloperDefinedSystemMessage
@@ -280,25 +283,63 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			systemMessage = ask.QuickSystemMessage
 		}
 
-		if err := ask.AskingSpinner(spinnerPrompt.String(), quick, func(ctx context.Context) error {
-			completion, err := ask.PromptAIWithSystemMessage(model, apiKey, prompt, history, systemMessage)
+		session := ask.NewSession(apiKey)
+		defer session.Close()
+
+		opts := ask.PromptOptions{
+			Model:         model,
+			APIKey:        apiKey,
+			Prompt:        prompt,
+			History:       history,
+			SystemMessage: systemMessage,
+			Settings:      ask.LoadResponseSettings(quick),
+		}
+
+		runTurn := func(ctx context.Context, onDelta func(string)) error {
+			result, err := session.Stream(ctx, opts, onDelta)
 			if err != nil {
 				return err
 			}
 
-			if response, err = ask.CollectResponse(completion.Choices, raw, responseWrapWidth); err != nil {
-				return err
+			content = ask.NormalizeContent(result.Content)
+			if content == "" {
+				return fmt.Errorf("received an empty response from %s", model)
 			}
+			incomplete = result.Incomplete
 
-			if cost, exists := ask.CalculateCost(model, completion); exists {
+			if cost, exists := ask.CalculateCost(model, result.Usage); exists {
 				pricing = fmt.Sprintf(" \u2022 $%.5f", cost)
 			}
 
 			return nil
-		}).Run(); err != nil {
-			return err
 		}
 
+		if raw {
+			// Raw output needs no rendering pass, so print it as it arrives.
+			streamed = true
+			if err := runTurn(cmd.Context(), func(delta string) {
+				fmt.Print(delta)
+			}); err != nil {
+				fmt.Println()
+				return err
+			}
+			fmt.Print("\n\n")
+		} else {
+			if err := ask.AskingSpinner(spinnerPrompt.String(), quick, func(ctx context.Context) error {
+				if err := runTurn(ctx, nil); err != nil {
+					return err
+				}
+
+				rendered, err := ask.RenderMarkdown(content, false, responseWrapWidth)
+				if err != nil {
+					return err
+				}
+				response = rendered
+				return nil
+			}).Run(); err != nil {
+				return err
+			}
+		}
 	} else {
 		response = "\n<dry-run> No response was generated.\n"
 	}
@@ -311,17 +352,21 @@ func runAsk(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to store user message: %w", err)
 		}
 
-		// Store assistant response
-		if _, err := data.CreateMessage(conversationID, "assistant", response); err != nil {
+		// Store the raw Markdown so it can be re-rendered at any width later.
+		if _, err := data.CreateMessage(conversationID, "assistant", content); err != nil {
 			return fmt.Errorf("failed to store assistant message: %w", err)
 		}
 	}
 
-	if response != "" || dryRun {
+	if response != "" || streamed || dryRun {
 		if dryRun {
 			fmt.Println(lipgloss.NewStyle().Italic(dryRun).Render(response))
-		} else {
+		} else if !streamed {
 			fmt.Println(response)
+		}
+
+		if incomplete != "" {
+			fmt.Println(txt.Italicf("The answer stopped early (%s).", incomplete))
 		}
 
 		conversationInfo := txt.Greyf("\u2022 Check important info for mistakes.")

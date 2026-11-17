@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/connordoman/windy"
 )
@@ -21,7 +20,7 @@ func (m LiveChatModel) renderTranscript(width int) string {
 		return m.emptyTranscriptView(width)
 	}
 
-	var renderer *glamour.TermRenderer
+	var renderer *MarkdownRenderer
 	if !m.cfg.Raw {
 		// Glamour indents its own output, so leave room for that margin.
 		renderer, _ = NewMarkdownRenderer(max(width-2, 20))
@@ -35,7 +34,7 @@ func (m LiveChatModel) renderTranscript(width int) string {
 	return strings.Join(blocks, "\n")
 }
 
-func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *glamour.TermRenderer) string {
+func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *MarkdownRenderer) string {
 	switch msg.Role {
 	case LiveRoleUser:
 		return m.renderUserMessage(msg, width)
@@ -46,6 +45,29 @@ func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *glamo
 	default:
 		return m.renderNotice("", msg.Content, windy.Neutral500, width)
 	}
+}
+
+// renderStreamingMessage renders the answer that is still arriving. It builds
+// its own renderer because it runs once per batch of deltas, apart from the
+// full transcript pass.
+func (m LiveChatModel) renderStreamingMessage(width int) string {
+	var renderer *MarkdownRenderer
+	if !m.cfg.Raw {
+		renderer, _ = NewMarkdownRenderer(max(width-2, 20))
+	}
+
+	model := m.cfg.Model
+	quick := false
+	if n := len(m.messages); n > 0 && m.messages[n-1].Quick {
+		model, quick = m.quickModel(), true
+	}
+
+	return m.renderAssistantMessage(LiveMessage{
+		Role:    LiveRoleAssistant,
+		Content: m.streaming,
+		Model:   model,
+		Quick:   quick,
+	}, width, renderer)
 }
 
 func (m LiveChatModel) renderUserMessage(msg LiveMessage, width int) string {
@@ -73,7 +95,7 @@ func (m LiveChatModel) renderUserMessage(msg LiveMessage, width int) string {
 		Render(block) + "\n"
 }
 
-func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, renderer *glamour.TermRenderer) string {
+func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, renderer *MarkdownRenderer) string {
 	body := msg.Content
 
 	if renderer != nil {
@@ -96,6 +118,9 @@ func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, render
 	}
 	if msg.Quick {
 		meta = append(meta, "quick")
+	}
+	if msg.Partial {
+		meta = append(meta, "interrupted")
 	}
 
 	footer := lipgloss.NewStyle().
@@ -190,6 +215,13 @@ func (m LiveChatModel) statusView() string {
 			Render(status)
 	}
 
+	if m.flashText != "" {
+		return padding.
+			Foreground(liveColor(windy.Green400)).
+			MaxWidth(m.width).
+			Render("✓ " + m.flashText)
+	}
+
 	hint := "Ready" + liveSeparator + QuickCommand + " anywhere in a message for a fast answer"
 	return padding.
 		Foreground(liveColor(windy.Neutral600)).
@@ -218,6 +250,7 @@ func (m LiveChatModel) helpView() string {
 		"enter send",
 		"alt+enter newline",
 		"pgup/pgdn scroll",
+		"drag to copy",
 	}
 	if m.waiting {
 		keys = append(keys, "esc cancel")
