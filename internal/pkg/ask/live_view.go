@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/connordoman/windy"
 )
@@ -21,7 +20,7 @@ func (m LiveChatModel) renderTranscript(width int) string {
 		return m.emptyTranscriptView(width)
 	}
 
-	var renderer *glamour.TermRenderer
+	var renderer *MarkdownRenderer
 	if !m.cfg.Raw {
 		// Glamour indents its own output, so leave room for that margin.
 		renderer, _ = NewMarkdownRenderer(max(width-2, 20))
@@ -35,7 +34,7 @@ func (m LiveChatModel) renderTranscript(width int) string {
 	return strings.Join(blocks, "\n")
 }
 
-func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *glamour.TermRenderer) string {
+func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *MarkdownRenderer) string {
 	switch msg.Role {
 	case LiveRoleUser:
 		return m.renderUserMessage(msg, width)
@@ -52,7 +51,7 @@ func (m LiveChatModel) renderMessage(msg LiveMessage, width int, renderer *glamo
 // its own renderer because it runs once per batch of deltas, apart from the
 // full transcript pass.
 func (m LiveChatModel) renderStreamingMessage(width int) string {
-	var renderer *glamour.TermRenderer
+	var renderer *MarkdownRenderer
 	if !m.cfg.Raw {
 		renderer, _ = NewMarkdownRenderer(max(width-2, 20))
 	}
@@ -96,7 +95,7 @@ func (m LiveChatModel) renderUserMessage(msg LiveMessage, width int) string {
 		Render(block) + "\n"
 }
 
-func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, renderer *glamour.TermRenderer) string {
+func (m LiveChatModel) renderAssistantMessage(msg LiveMessage, width int, renderer *MarkdownRenderer) string {
 	body := msg.Content
 
 	if renderer != nil {
